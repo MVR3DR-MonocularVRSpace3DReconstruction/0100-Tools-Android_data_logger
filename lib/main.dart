@@ -158,21 +158,29 @@ class _MyHomePageState extends State<MyHomePage> {
                       onPressed: () async {
                           recording = !recording;
                           // print(recording);
-                          try {
 
-                            while(recording) {
-                              var path = join((await getApplicationSupportDirectory()).path, '${DateTime.now()}.png');
-                              print(path);
+                          while(recording) {
+                            var time = DateTime.now();
+                            var path = join('img_',(await getApplicationSupportDirectory()).path, '$time.png');
+                            var data = join('imu_',(await getApplicationSupportDirectory()).path, '$time.txt');
+                            print('$path  =  $data');
+                            try {
+                              File file = new File(data);
+                              IOSink imu = file.openWrite(mode: FileMode.append);
+                              imu.write('$accelerometer\n$userAccelerometer\n$gyroscope');
+                              imu.close();
+
                               XFile pic = await controller.takePicture();
                               pic.saveTo(path);
-
-                              Future.delayed(const Duration( microseconds: 84));
+                            } catch (e) {
+                              // If an error occurs, log the error to the console.
+                              print(e);
                             }
 
-                          } catch (e) {
-                            // If an error occurs, log the error to the console.
-                            print(e);
+
+                            sleep(const Duration( microseconds: 84));
                           }
+
                           // recording = !recording;
                         },
                       backgroundColor: recording? Colors.red : Colors.white,
