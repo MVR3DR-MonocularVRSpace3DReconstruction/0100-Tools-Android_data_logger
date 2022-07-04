@@ -1,6 +1,8 @@
 # android_data_logger
 
-A new Flutter project.
+A Flutter project for record dataset from your smart phone. Including Accelerometer, User Accelerometer, Gyroscope ,Magnetometer and current camera data.
+
+
 
 ## Getting Started
 
