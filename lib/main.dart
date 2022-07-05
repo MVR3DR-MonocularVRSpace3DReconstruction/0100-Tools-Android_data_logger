@@ -6,6 +6,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -110,6 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           body: Container(
+            alignment: Alignment.center,
             color: Colors.black,
             child: CameraPreview(
               controller,
@@ -165,13 +167,19 @@ class _MyHomePageState extends State<MyHomePage> {
                             var data = join('imu_',(await getApplicationSupportDirectory()).path, '$time.txt');
                             print('$path  =  $data');
                             try {
-                              File file = new File(data);
+
+                              File file = File(data);
                               IOSink imu = file.openWrite(mode: FileMode.append);
                               imu.write('$accelerometer\n$userAccelerometer\n$gyroscope');
                               imu.close();
 
+                              print('logging imu success');
+
                               XFile pic = await controller.takePicture();
                               pic.saveTo(path);
+
+                              print('capture success');
+                              print('====================');
                             } catch (e) {
                               // If an error occurs, log the error to the console.
                               print(e);
