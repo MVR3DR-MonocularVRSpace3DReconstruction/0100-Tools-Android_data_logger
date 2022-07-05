@@ -1,9 +1,3 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// ignore_for_file: public_member_api_docs
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
@@ -13,12 +7,8 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' show join;
+import 'package:permission_handler/permission_handler.dart';
 
-// void main() {
-//
-//   runApp(const MyApp());
-// }
-const PATH = '/';
 
 late List<CameraDescription> _cameras;
 
@@ -31,6 +21,12 @@ Future<void> main() async {
   ]);
 
   _cameras = await availableCameras();
+
+  //permission
+  var status = await Permission.storage.status;
+  if (!status.isGranted) {
+    await Permission.storage.request();
+  }
 
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -69,6 +65,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+
   //Camera
   late CameraController controller;
 
@@ -80,13 +78,10 @@ class _MyHomePageState extends State<MyHomePage> {
   List<double>? _magnetometerValues;
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
 
-  //navi
-  int _selectedIndex = 0;
-  void _onItemTapped(int value) {
-    setState(() {
-      _selectedIndex = value;
-    });
-  }
+  //log
+  String log = '';
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -96,8 +91,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ?.map((double v) => v.toStringAsFixed(1))
         .toList();
     final magnetometer = _magnetometerValues?.map((double v) => v.toStringAsFixed(1)).toList();
-
-
 
 
     return MaterialApp(
@@ -113,95 +106,137 @@ class _MyHomePageState extends State<MyHomePage> {
           body: Container(
             alignment: Alignment.center,
             color: Colors.black,
-            child: CameraPreview(
-              controller,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text('Accelerometer: $accelerometer',style: const TextStyle(color: Colors.white)),
-                      ],
+            child: Column(
+              children: [
+                Container(
+                  height: 80,
+                  padding: const EdgeInsets.only(top: 10,bottom: 10),
+                  child: Text(
+                    log,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text('UserAccelerometer: $userAccelerometer',style: const TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text('Gyroscope: $gyroscope',style: const TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text('Magnetometer: $magnetometer',style: const TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                  Center(
-                    child: FloatingActionButton(
-                      onPressed: () async {
-                          recording = !recording;
-                          // print(recording);
+                ),
+                CameraPreview(
+                  controller,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
 
-                          while(recording) {
-                            var time = DateTime.now();
-                            var path = join('img_',(await getApplicationSupportDirectory()).path, '$time.png');
-                            var data = join('imu_',(await getApplicationSupportDirectory()).path, '$time.txt');
-                            print('$path  =  $data');
-                            try {
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text('Accelerometer: $accelerometer',style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text('UserAccelerometer: $userAccelerometer',style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text('Gyroscope: $gyroscope',style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text('Magnetometer: $magnetometer',style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
 
-                              File file = File(data);
-                              IOSink imu = file.openWrite(mode: FileMode.append);
-                              imu.write('$accelerometer\n$userAccelerometer\n$gyroscope');
-                              imu.close();
 
-                              print('logging imu success');
 
-                              XFile pic = await controller.takePicture();
-                              pic.saveTo(path);
 
-                              print('capture success');
-                              print('====================');
-                            } catch (e) {
-                              // If an error occurs, log the error to the console.
-                              print(e);
+
+
+                      Center(
+                        child: FloatingActionButton(
+                          child: Icon(recording ? Icons.circle : Icons.camera, color: recording ? Colors.white: Colors.red,),
+                          onPressed: () async {
+                            recording = !recording;
+
+                            while(recording) {
+                              var time = DateTime.now();
+                            // ,(await getApplicationSupportDirectory()).path
+                              var path = join('/storage/emulated/0/Download/', 'img_$time.png');
+                              var data = join('/storage/emulated/0/Download/', 'imu_$time.txt');
+                              print('$path  =  $data');
+
+                              setState(() {
+                                log = 'image path: $path\nimu data path: $data';
+                              });
+
+                              try {
+
+                                File file = File(data);
+                                IOSink imu = file.openWrite(mode: FileMode.append);
+                                imu.write('$accelerometer\n$userAccelerometer\n$gyroscope');
+                                imu.close();
+
+                                print('logging imu success');
+
+                                XFile pic = await controller.takePicture();
+                                pic.saveTo(path);
+
+                                print('capture success');
+                                print('====================');
+                              } catch (e) {
+                                // If an error occurs, log the error to the console.
+                                print(e);
+                              }
+
+
+                              sleep(const Duration( microseconds: 84));
                             }
 
+                            // recording = !recording;
+                          },
+                          backgroundColor: recording? Colors.red : Colors.white,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                        width: 200,
+                      )
 
-                            sleep(const Duration( microseconds: 84));
-                          }
-
-                          // recording = !recording;
-                        },
-                      backgroundColor: recording? Colors.red : Colors.white,
-                    ),
+                    ],
                   ),
-                  const SizedBox(
-                    height: 10,
-                    width: 200,
-                  )
+                ),
 
-                ],
-              ),
-            ),
+                Container(
+                  padding: EdgeInsets.only(top: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FloatingActionButton(
+                          child: Icon(Icons.clear_all),
+                          onPressed: () {
+
+                          }),
+
+                    ],
+                  ),
+                )
+              ],
+            )
           )
       ),
 
@@ -223,6 +258,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+
+
 
     _streamSubscriptions.add(
       accelerometerEvents.listen(
@@ -262,7 +299,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
 
-    controller = CameraController(_cameras[0], ResolutionPreset.max);
+    controller = CameraController(_cameras[0], ResolutionPreset.low);
     controller.initialize().then((_) {
       if (!mounted) {
         return;
@@ -284,3 +321,5 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
 }
+
+
