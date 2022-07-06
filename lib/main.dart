@@ -105,6 +105,10 @@ class _MyHomePageState extends State<MyHomePage> {
     if (!existImg) {dirImg.create();}
     if (!existImu) {dirImu.create();}
 
+    //imu data
+    var totalDataPath = join('/storage/emulated/0/Download/imu/', 'TotalImu.txt');
+    File totalFile = File(totalDataPath);
+    IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
 
     return MaterialApp(
       home: Scaffold(
@@ -121,8 +125,10 @@ class _MyHomePageState extends State<MyHomePage> {
             // color: Colors.black,
             children: [
               Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Center(
+                  Container(
+                    alignment: Alignment.center,
                     child: CameraPreview(
                       controller,
                       child: Column(
@@ -165,8 +171,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                     File file = File(data);
                                     IOSink imu =
                                         file.openWrite(mode: FileMode.append);
+                                    String strAccelerometer = accelerometer!.join(' ');
+                                    String strUserAccelerometer = userAccelerometer!.join(' ');
+                                    String strGyroscope = gyroscope!.join(' ');
+
+                                    totalImuSink.write(
+                                        '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
                                     imu.write(
-                                        '$accelerometer\n$userAccelerometer\n$gyroscope');
+                                        '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
                                     imu.close();
 
                                     // print('logging imu success');
@@ -256,6 +268,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       }
                       print('FlashMode: $flashMode');
                       break;
+                    case 5:
+                      totalImuSink.close();
+                      deleteFile('/storage/emulated/0/Download/img/');
+                      deleteFile('/storage/emulated/0/Download/imu/');
+                      print('cleared !!');
+                      break;
 
                   }
                 },
@@ -266,12 +284,27 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.looks_3,
                   flashMode == 0 ? Icons.flash_auto : Icons.clear, // whether auto flash
                   flashMode != 0 ? (flashMode == 1 ? Icons.flash_on : Icons.flash_off):Icons.clear,
+                  Icons.delete, // delete imu file
 
                 ],
               ),
             ],
           )),
     );
+  }
+
+  void deleteFile(String path) {
+    Directory directory = Directory(path);
+    if (directory.existsSync()) {
+      List<FileSystemEntity> files = directory.listSync();
+      if (files.isNotEmpty) {
+        for (var file in files) {
+          file.deleteSync();
+        }
+      }
+      directory.deleteSync();
+    }
+
   }
 
   void onNewCameraSelected(CameraDescription cameraDescription,
