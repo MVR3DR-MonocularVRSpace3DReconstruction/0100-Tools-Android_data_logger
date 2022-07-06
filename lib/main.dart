@@ -70,9 +70,6 @@ class _MyHomePageState extends State<MyHomePage> {
   ResolutionPreset currentResolutionPreset = ResolutionPreset.low;
   bool _isCameraInitialized = false;
 
-  //0 auto 1 on 2 off
-  int flashMode = 0;
-
   bool recording = false;
 
   //data
@@ -249,37 +246,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       onNewCameraSelected(
                           controller.description, currentResolutionPreset);
                       break;
-                    case 3:
-                      if (flashMode != 0) {
-                        setState(() {
-                          flashMode = 0;
-                        });
-                      }
-                      print('FlashMode: $flashMode');
-                      break;
-                    case 4:
-                      if (flashMode == 0) {
-                        setState(() {
-                          flashMode = 1;
-                        });
-                      } else if (flashMode == 1) {
-                        setState(() {
-                          flashMode = 2;
-                        });
-                      } else {
-                        setState(() {
-                          flashMode = 1;
-                        });
-                      }
-                      print('FlashMode: $flashMode');
-                      break;
-                    case 5:
 
+                    case 3:
                       deleteFile('/storage/emulated/0/Download/img/');
                       deleteFile('/storage/emulated/0/Download/imu/');
                       print('cleared !!');
                       break;
-
                   }
                 },
 
@@ -287,8 +259,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.looks_one,
                   Icons.looks_two,
                   Icons.looks_3,
-                  flashMode == 0 ? Icons.flash_auto : Icons.clear, // whether auto flash
-                  flashMode != 0 ? (flashMode == 1 ? Icons.flash_on : Icons.flash_off):Icons.clear,
                   Icons.delete, // delete imu file
 
                 ],
@@ -405,7 +375,7 @@ class _MyHomePageState extends State<MyHomePage> {
     controller = CameraController(_cameras[0], currentResolutionPreset);
     controller.initialize().then((_) {
       if (!mounted) {
-        controller.setFlashMode(FlashMode.off);
+        // controller.setFlashMode(FlashMode.off);
         return;
       }
     }).catchError((Object e) {
