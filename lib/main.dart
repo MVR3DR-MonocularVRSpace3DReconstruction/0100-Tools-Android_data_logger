@@ -1,24 +1,24 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
+// import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:camera/camera.dart';
-import 'package:path_provider/path_provider.dart';
+// import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' show join;
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:floatingpanel/floatingpanel.dart';
 
 late List<CameraDescription> _cameras;
+int decimalPoints = 7;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown
-  ]);
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   _cameras = await availableCameras();
 
@@ -32,13 +32,12 @@ Future<void> main() async {
     debugShowCheckedModeBanner: false,
     initialRoute: 'Log',
     routes: {
-      'Log':(context){return MyApp();},
-
+      'Log': (context) {
+        return MyApp();
+      },
     },
   ));
-
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -65,12 +64,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
-
   //Camera
   late CameraController controller;
+  final resolutionPresets = ResolutionPreset.values;
+  ResolutionPreset currentResolutionPreset = ResolutionPreset.low;
+  bool _isCameraInitialized = false;
+
+  //0 auto 1 on 2 off
+  int flashMode = 0;
 
   bool recording = false;
+
   //data
   List<double>? _accelerometerValues;
   List<double>? _userAccelerometerValues;
@@ -81,169 +85,233 @@ class _MyHomePageState extends State<MyHomePage> {
   //log
   String log = '';
 
-
-
   @override
   Widget build(BuildContext context) {
-    final accelerometer = _accelerometerValues?.map((double v) => v.toStringAsFixed(1)).toList();
-    final gyroscope = _gyroscopeValues?.map((double v) => v.toStringAsFixed(1)).toList();
+    final accelerometer =
+        _accelerometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
+    final gyroscope =
+        _gyroscopeValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
     final userAccelerometer = _userAccelerometerValues
-        ?.map((double v) => v.toStringAsFixed(1))
+        ?.map((double v) => v.toStringAsFixed(decimalPoints))
         .toList();
-    final magnetometer = _magnetometerValues?.map((double v) => v.toStringAsFixed(1)).toList();
+    final magnetometer =
+        _magnetometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
+
+    // check file exist
+    var dirImg = Directory('/storage/emulated/0/Download/img/');
+    var dirImu = Directory('/storage/emulated/0/Download/imu/');
+    var existImg = dirImg.existsSync();
+    var existImu = dirImu.existsSync();
+    if (!existImg) {dirImg.create();}
+    if (!existImu) {dirImu.create();}
 
 
     return MaterialApp(
       home: Scaffold(
-        backgroundColor: Colors.black,
+          backgroundColor: Colors.black,
           appBar: AppBar(
+            centerTitle: true,
             backgroundColor: Colors.red,
             title: const Text(
               'Data Logger',
-
             ),
           ),
-          body: Container(
+          body: Stack(
             alignment: Alignment.center,
-            color: Colors.black,
-            child: Column(
-              children: [
-                Container(
-                  height: 80,
-                  padding: const EdgeInsets.only(top: 10,bottom: 10),
-                  child: Text(
-                    log,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
+            // color: Colors.black,
+            children: [
+              Column(
+                children: [
+                  Center(
+                    child: CameraPreview(
+                      controller,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          Text('Accelerometer: $accelerometer',
+                              style: const TextStyle(color: Colors.white)),
+                          Text('UserAccelerometer: $userAccelerometer',
+                              style: const TextStyle(color: Colors.white)),
+                          Text('Gyroscope: $gyroscope',
+                              style: const TextStyle(color: Colors.white)),
+                          Text('Magnetometer: $magnetometer',
+                              style: const TextStyle(color: Colors.white)),
+                          Center(
+                            child: FloatingActionButton(
+                              child: Icon(
+                                recording ? Icons.circle : Icons.camera,
+                                color: recording ? Colors.white : Colors.red,
+                              ),
+                              onPressed: () async {
+                                recording = !recording;
+
+                                while (recording) {
+                                  var time = DateTime.now();
+                                  // ,(await getApplicationSupportDirectory()).path
+                                  var path = join(
+                                      '/storage/emulated/0/Download/img/',
+                                      'img_$time.png');
+                                  var data = join(
+                                      '/storage/emulated/0/Download/imu/',
+                                      'imu_$time.txt');
+                                  print('$path  =  $data');
+
+                                  setState(() {
+                                    log =
+                                        'image path: $path\nimu data path: $data';
+                                  });
+
+                                  try {
+                                    File file = File(data);
+                                    IOSink imu =
+                                        file.openWrite(mode: FileMode.append);
+                                    imu.write(
+                                        '$accelerometer\n$userAccelerometer\n$gyroscope');
+                                    imu.close();
+
+                                    // print('logging imu success');
+
+                                    XFile pic = await controller.takePicture();
+                                    pic.saveTo(path);
+
+                                    // print('capture success');
+                                    // print('====================');
+                                  } catch (e) {
+                                    // If an error occurs, log the error to the console.
+                                    print(e);
+                                  }
+
+                                  sleep(const Duration(microseconds: 84));
+                                }
+
+                                // recording = !recording;
+                              },
+                              backgroundColor:
+                                  recording ? Colors.red : Colors.white,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                            width: 200,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-                CameraPreview(
-                  controller,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: <Widget>[
+                  )
+                ],
+              ),
+              FloatBoxPanel(
+                //Customize properties
+                // backgroundColor: Color(0xFF222222),
+                panelShape: PanelShape.rounded,
+                borderRadius: BorderRadius.circular(8.0),
 
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text('Accelerometer: $accelerometer',style: const TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text('UserAccelerometer: $userAccelerometer',style: const TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text('Gyroscope: $gyroscope',style: const TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text('Magnetometer: $magnetometer',style: const TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      ),
+                size: 50,
+                onPressed: (index) {
+                  print("Clicked on item: $index");
 
+                  switch (index) {
+                    case 0:
+                      setState(() {
+                        currentResolutionPreset = ResolutionPreset.low;
+                      });
+                      onNewCameraSelected(
+                          controller.description, currentResolutionPreset);
+                      break;
+                    case 1:
+                      setState(() {
+                        currentResolutionPreset = ResolutionPreset.medium;
+                      });
+                      onNewCameraSelected(
+                          controller.description, currentResolutionPreset);
+                      break;
+                    case 2:
+                      setState(() {
+                        currentResolutionPreset = ResolutionPreset.max;
+                      });
+                      onNewCameraSelected(
+                          controller.description, currentResolutionPreset);
+                      break;
+                    case 3:
+                      if (flashMode != 0) {
+                        setState(() {
+                          flashMode = 0;
+                        });
+                      }
+                      print('FlashMode: $flashMode');
+                      break;
+                    case 4:
+                      if (flashMode == 0) {
+                        setState(() {
+                          flashMode = 1;
+                        });
+                      } else if (flashMode == 1) {
+                        setState(() {
+                          flashMode = 2;
+                        });
+                      } else {
+                        setState(() {
+                          flashMode = 1;
+                        });
+                      }
+                      print('FlashMode: $flashMode');
+                      break;
 
+                  }
+                },
 
+                buttons: [
+                  Icons.looks_one,
+                  Icons.looks_two,
+                  Icons.looks_3,
+                  flashMode == 0 ? Icons.flash_auto : Icons.clear, // whether auto flash
+                  flashMode != 0 ? (flashMode == 1 ? Icons.flash_on : Icons.flash_off):Icons.clear,
 
-
-
-                      Center(
-                        child: FloatingActionButton(
-                          child: Icon(recording ? Icons.circle : Icons.camera, color: recording ? Colors.white: Colors.red,),
-                          onPressed: () async {
-                            recording = !recording;
-
-                            while(recording) {
-                              var time = DateTime.now();
-                            // ,(await getApplicationSupportDirectory()).path
-                              var path = join('/storage/emulated/0/Download/', 'img_$time.png');
-                              var data = join('/storage/emulated/0/Download/', 'imu_$time.txt');
-                              print('$path  =  $data');
-
-                              setState(() {
-                                log = 'image path: $path\nimu data path: $data';
-                              });
-
-                              try {
-
-                                File file = File(data);
-                                IOSink imu = file.openWrite(mode: FileMode.append);
-                                imu.write('$accelerometer\n$userAccelerometer\n$gyroscope');
-                                imu.close();
-
-                                print('logging imu success');
-
-                                XFile pic = await controller.takePicture();
-                                pic.saveTo(path);
-
-                                print('capture success');
-                                print('====================');
-                              } catch (e) {
-                                // If an error occurs, log the error to the console.
-                                print(e);
-                              }
-
-
-                              sleep(const Duration( microseconds: 84));
-                            }
-
-                            // recording = !recording;
-                          },
-                          backgroundColor: recording? Colors.red : Colors.white,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                        width: 200,
-                      )
-
-                    ],
-                  ),
-                ),
-
-                Container(
-                  padding: EdgeInsets.only(top: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FloatingActionButton(
-                          child: Icon(Icons.clear_all),
-                          onPressed: () {
-
-                          }),
-
-                    ],
-                  ),
-                )
-              ],
-            )
-          )
-      ),
-
-
-
-
+                ],
+              ),
+            ],
+          )),
     );
+  }
+
+  void onNewCameraSelected(CameraDescription cameraDescription,
+      ResolutionPreset currentResolutionPreset) async {
+    final previousCameraController = controller;
+    // Instantiating the camera controller
+    final CameraController cameraController = CameraController(
+      cameraDescription,
+      currentResolutionPreset,
+      imageFormatGroup: ImageFormatGroup.jpeg,
+    );
+
+    // Dispose the previous controller
+    await previousCameraController.dispose();
+
+    // Replace with the new controller
+    if (mounted) {
+      setState(() {
+        controller = cameraController;
+      });
+    }
+
+    // Update UI if controller updated
+    cameraController.addListener(() {
+      if (mounted) setState(() {});
+    });
+
+    // Initialize controller
+    try {
+      await cameraController.initialize();
+    } on CameraException catch (e) {
+      print('Error initializing camera: $e');
+    }
+
+    // Update the Boolean
+    if (mounted) {
+      setState(() {
+        _isCameraInitialized = controller.value.isInitialized;
+      });
+    }
   }
 
   @override
@@ -259,11 +327,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-
-
     _streamSubscriptions.add(
       accelerometerEvents.listen(
-            (AccelerometerEvent event) {
+        (AccelerometerEvent event) {
           setState(() {
             _accelerometerValues = <double>[event.x, event.y, event.z];
           });
@@ -272,7 +338,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     _streamSubscriptions.add(
       gyroscopeEvents.listen(
-            (GyroscopeEvent event) {
+        (GyroscopeEvent event) {
           setState(() {
             _gyroscopeValues = <double>[event.x, event.y, event.z];
           });
@@ -281,7 +347,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     _streamSubscriptions.add(
       userAccelerometerEvents.listen(
-            (UserAccelerometerEvent event) {
+        (UserAccelerometerEvent event) {
           setState(() {
             _userAccelerometerValues = <double>[event.x, event.y, event.z];
           });
@@ -290,7 +356,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
     _streamSubscriptions.add(
       magnetometerEvents.listen(
-            (MagnetometerEvent event) {
+        (MagnetometerEvent event) {
           setState(() {
             _magnetometerValues = <double>[event.x, event.y, event.z];
           });
@@ -298,13 +364,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
 
-
-    controller = CameraController(_cameras[0], ResolutionPreset.low);
+    controller = CameraController(_cameras[0], currentResolutionPreset);
     controller.initialize().then((_) {
       if (!mounted) {
+        controller.setFlashMode(FlashMode.off);
         return;
       }
-      setState(() {});
     }).catchError((Object e) {
       if (e is CameraException) {
         switch (e.code) {
@@ -318,8 +383,4 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
   }
-
-
 }
-
-
