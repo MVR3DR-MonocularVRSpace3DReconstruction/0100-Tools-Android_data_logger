@@ -108,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
     //imu data
     var totalDataPath = join('/storage/emulated/0/Download/imu/', 'TotalImu.txt');
     File totalFile = File(totalDataPath);
-    IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
+
 
     return MaterialApp(
       home: Scaffold(
@@ -175,11 +175,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                     String strUserAccelerometer = userAccelerometer!.join(' ');
                                     String strGyroscope = gyroscope!.join(' ');
 
+                                    IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
+
                                     totalImuSink.write(
                                         '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
                                     imu.write(
                                         '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
+
                                     imu.close();
+                                    totalImuSink.close();
+
 
                                     // print('logging imu success');
 
@@ -269,7 +274,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       print('FlashMode: $flashMode');
                       break;
                     case 5:
-                      totalImuSink.close();
+
                       deleteFile('/storage/emulated/0/Download/img/');
                       deleteFile('/storage/emulated/0/Download/imu/');
                       print('cleared !!');
