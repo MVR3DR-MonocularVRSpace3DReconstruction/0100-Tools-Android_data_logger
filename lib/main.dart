@@ -160,12 +160,14 @@ class _MyHomePageState extends State<MyHomePage> {
                               onPressed: () async {
                                 recording = !recording;
 
+                                var lastCap;
+
                                 if (recording) {
 
                                   controller.startImageStream( (image) async {
                                     // do something with the image stream here
                                       var time = DateTime.now();
-                                      var lastCap;
+
                                       if (lastCap == null || time.difference(lastCap).inMilliseconds >= DURATION ) {
 
                                         var path = join('/storage/emulated/0/Download/img/', 'img_$time.png');
@@ -175,7 +177,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                           setState(() {
                                             log = 'image path: $path\nimu data path: $data';
                                           });
-
 
                                           try {
                                             //write data
@@ -187,7 +188,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                             String strAccelerometer = accelerometer!.join(' ');
                                             String strUserAccelerometer = userAccelerometer!.join(' ');
                                             String strGyroscope = gyroscope!.join(' ');
-
 
                                             totalImuSink.write('$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
                                             imu.write('$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
