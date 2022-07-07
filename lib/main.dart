@@ -11,8 +11,12 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'package:floatingpanel/floatingpanel.dart';
 
+import 'package:image_picker/image_picker.dart';
+import 'img2png.dart';
+
 late List<CameraDescription> _cameras;
-int decimalPoints = 7;
+const int decimalPoints = 7;
+const int DURATION = 10;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -106,7 +110,6 @@ class _MyHomePageState extends State<MyHomePage> {
     var totalDataPath = join('/storage/emulated/0/Download/imu/', 'TotalImu.txt');
     File totalFile = File(totalDataPath);
 
-
     return MaterialApp(
       home: Scaffold(
           backgroundColor: Colors.black,
@@ -139,6 +142,15 @@ class _MyHomePageState extends State<MyHomePage> {
                               style: const TextStyle(color: Colors.white)),
                           Text('Magnetometer: $magnetometer',
                               style: const TextStyle(color: Colors.white)),
+
+
+
+
+
+                          //capture
+
+
+
                           Center(
                             child: FloatingActionButton(
                               child: Icon(
@@ -148,57 +160,110 @@ class _MyHomePageState extends State<MyHomePage> {
                               onPressed: () async {
                                 recording = !recording;
 
-                                while (recording) {
-                                  var time = DateTime.now();
-                                  // ,(await getApplicationSupportDirectory()).path
-                                  var path = join(
-                                      '/storage/emulated/0/Download/img/',
-                                      'img_$time.png');
-                                  var data = join(
-                                      '/storage/emulated/0/Download/imu/',
-                                      'imu_$time.txt');
-                                  print('$path  =  $data');
+                                if (recording) {
 
-                                  setState(() {
-                                    log =
-                                        'image path: $path\nimu data path: $data';
+                                  controller.startImageStream( (image) async {
+                                    // do something with the image stream here
+                                      var time = DateTime.now();
+                                      var lastCap;
+                                      if (lastCap == null || time.difference(lastCap).inMilliseconds >= DURATION ) {
+
+                                        var path = join('/storage/emulated/0/Download/img/', 'img_$time.png');
+                                        var data = join('/storage/emulated/0/Download/imu/', 'imu_$time.txt');
+                                        convertYUV420toImageColor(image).then((png) async {
+                                          print('$path  =  $data');
+                                          setState(() {
+                                            log = 'image path: $path\nimu data path: $data';
+                                          });
+
+
+                                          try {
+                                            //write data
+                                            File file = File(data);
+
+                                            IOSink imu = file.openWrite(mode: FileMode.append);
+                                            IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
+
+                                            String strAccelerometer = accelerometer!.join(' ');
+                                            String strUserAccelerometer = userAccelerometer!.join(' ');
+                                            String strGyroscope = gyroscope!.join(' ');
+
+
+                                            totalImuSink.write('$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
+                                            imu.write('$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
+
+                                            imu.close();
+                                            totalImuSink.close();
+
+                                            //log picture
+                                            await File(path).writeAsBytes(png!);
+                                            lastCap = DateTime.now();
+
+                                          } catch (e) {
+                                            print(e);
+                                          }
+
+                                        });
+
+                                      }
                                   });
-
-                                  try {
-                                    File file = File(data);
-                                    IOSink imu =
-                                        file.openWrite(mode: FileMode.append);
-                                    String strAccelerometer = accelerometer!.join(' ');
-                                    String strUserAccelerometer = userAccelerometer!.join(' ');
-                                    String strGyroscope = gyroscope!.join(' ');
-
-                                    IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
-
-                                    totalImuSink.write(
-                                        '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
-                                    imu.write(
-                                        '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
-
-                                    imu.close();
-                                    totalImuSink.close();
-
-
-                                    // print('logging imu success');
-
-                                    XFile pic = await controller.takePicture();
-                                    pic.saveTo(path);
-
-                                    // print('capture success');
-                                    // print('====================');
-                                  } catch (e) {
-                                    // If an error occurs, log the error to the console.
-                                    print(e);
-                                  }
-
-                                  sleep(const Duration(microseconds: 84));
+                                } else {
+                                  controller.stopImageStream();
                                 }
 
-                                // recording = !recording;
+
+
+                                // while (recording) {
+                                //   var time = DateTime.now();
+                                //   // ,(await getApplicationSupportDirectory()).path
+                                //   var path = join(
+                                //       '/storage/emulated/0/Download/img/',
+                                //       'img_$time.png');
+                                //   var data = join(
+                                //       '/storage/emulated/0/Download/imu/',
+                                //       'imu_$time.txt');
+                                //   print('$path  =  $data');
+                                //
+                                //   setState(() {
+                                //     log =
+                                //         'image path: $path\nimu data path: $data';
+                                //   });
+                                //
+                                //   try {
+                                //     File file = File(data);
+                                //     IOSink imu =
+                                //         file.openWrite(mode: FileMode.append);
+                                //     String strAccelerometer = accelerometer!.join(' ');
+                                //     String strUserAccelerometer = userAccelerometer!.join(' ');
+                                //     String strGyroscope = gyroscope!.join(' ');
+                                //
+                                //     IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
+                                //
+                                //     totalImuSink.write(
+                                //         '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
+                                //     imu.write(
+                                //         '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
+                                //
+                                //     imu.close();
+                                //     totalImuSink.close();
+                                //
+                                //
+                                //     // print('logging imu success');
+                                //
+                                //     XFile pic = await controller.takePicture();
+                                //     pic.saveTo(path);
+                                //
+                                //     // print('capture success');
+                                //     // print('====================');
+                                //   } catch (e) {
+                                //     // If an error occurs, log the error to the console.
+                                //     print(e);
+                                //   }
+                                //
+                                //
+                                //   sleep(const Duration(microseconds: 84));
+                                // }
+
                               },
                               backgroundColor:
                                   recording ? Colors.red : Colors.white,
@@ -229,27 +294,27 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() {
                         currentResolutionPreset = ResolutionPreset.low;
                       });
-                      onNewCameraSelected(
+                      _onNewCameraSelected(
                           controller.description, currentResolutionPreset);
                       break;
                     case 1:
                       setState(() {
                         currentResolutionPreset = ResolutionPreset.medium;
                       });
-                      onNewCameraSelected(
+                      _onNewCameraSelected(
                           controller.description, currentResolutionPreset);
                       break;
                     case 2:
                       setState(() {
                         currentResolutionPreset = ResolutionPreset.max;
                       });
-                      onNewCameraSelected(
+                      _onNewCameraSelected(
                           controller.description, currentResolutionPreset);
                       break;
 
                     case 3:
-                      deleteFile('/storage/emulated/0/Download/img/');
-                      deleteFile('/storage/emulated/0/Download/imu/');
+                      _deleteFile('/storage/emulated/0/Download/img/');
+                      _deleteFile('/storage/emulated/0/Download/imu/');
                       print('cleared !!');
                       break;
                   }
@@ -268,7 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void deleteFile(String path) {
+  void _deleteFile(String path) {
     Directory directory = Directory(path);
     if (directory.existsSync()) {
       List<FileSystemEntity> files = directory.listSync();
@@ -282,7 +347,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
-  void onNewCameraSelected(CameraDescription cameraDescription,
+  void _onNewCameraSelected(CameraDescription cameraDescription,
       ResolutionPreset currentResolutionPreset) async {
     final previousCameraController = controller;
     // Instantiating the camera controller
