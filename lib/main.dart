@@ -5,18 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:camera/camera.dart';
-// import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' show join;
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:floatingpanel/floatingpanel.dart';
 
-import 'package:image_picker/image_picker.dart';
-import 'img2png.dart';
-
 late List<CameraDescription> _cameras;
 const int decimalPoints = 7;
-const int DURATION = 10;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,27 +84,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final accelerometer =
-        _accelerometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
-    final gyroscope =
-        _gyroscopeValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
-    final userAccelerometer = _userAccelerometerValues
-        ?.map((double v) => v.toStringAsFixed(decimalPoints))
-        .toList();
-    final magnetometer =
-        _magnetometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
+    final accelerometer = _accelerometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
+    final gyroscope = _gyroscopeValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
+    final userAccelerometer = _userAccelerometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
+    final magnetometer = _magnetometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
 
-    // check file exist
-    var dirImg = Directory('/storage/emulated/0/Download/img/');
-    var dirImu = Directory('/storage/emulated/0/Download/imu/');
-    var existImg = dirImg.existsSync();
-    var existImu = dirImu.existsSync();
-    if (!existImg) {dirImg.create();}
-    if (!existImu) {dirImu.create();}
 
-    //imu data
-    var totalDataPath = join('/storage/emulated/0/Download/imu/', 'TotalImu.txt');
-    File totalFile = File(totalDataPath);
+    var imuPath = join('/storage/emulated/0/Download/', 'TotalImu.txt');
+    File imuFile = File(imuPath);
+    if (!imuFile.existsSync()) {File imuFile = File(imuPath);}
+    if (recording) {
+
+
+      String timestamp = DateTime.now().toString();
+      String strAccelerometer = accelerometer!.join(' ');
+      String strUserAccelerometer = userAccelerometer!.join(' ');
+      String strGyroscope = gyroscope!.join(' ');
+      String strMagnetometer = magnetometer!.join(' ');
+
+      IOSink imuSink = imuFile.openWrite(mode: FileMode.append);
+      imuSink.write('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
+      imuSink.close();
+    }
+
 
     return MaterialApp(
       home: Scaffold(
@@ -158,112 +156,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                 color: recording ? Colors.white : Colors.red,
                               ),
                               onPressed: () async {
-                                recording = !recording;
 
-                                var lastCap;
-
-                                if (recording) {
-
-                                  controller.startImageStream( (image) async {
-                                    // do something with the image stream here
-                                      var time = DateTime.now();
-
-                                      if (lastCap == null || time.difference(lastCap).inMilliseconds >= DURATION ) {
-
-                                        var path = join('/storage/emulated/0/Download/img/', 'img_$time.png');
-                                        var data = join('/storage/emulated/0/Download/imu/', 'imu_$time.txt');
-                                        convertYUV420toImageColor(image).then((png) async {
-                                          print('$path  =  $data');
-                                          setState(() {
-                                            log = 'image path: $path\nimu data path: $data';
-                                          });
-
-                                          try {
-                                            //write data
-                                            File file = File(data);
-
-                                            IOSink imu = file.openWrite(mode: FileMode.append);
-                                            IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
-
-                                            String strAccelerometer = accelerometer!.join(' ');
-                                            String strUserAccelerometer = userAccelerometer!.join(' ');
-                                            String strGyroscope = gyroscope!.join(' ');
-
-                                            totalImuSink.write('$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
-                                            imu.write('$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
-
-                                            imu.close();
-                                            totalImuSink.close();
-
-                                            //log picture
-                                            await File(path).writeAsBytes(png!);
-                                            lastCap = DateTime.now();
-
-                                          } catch (e) {
-                                            print(e);
-                                          }
-
-                                        });
-
-                                      }
-                                  });
+                                if (!recording) {
+                                  print('=> Start recording!!');
+                                  _deleteFile('/storage/emulated/0/Download/');
+                                  await controller.prepareForVideoRecording();
+                                  await controller.startVideoRecording();
                                 } else {
-                                  controller.stopImageStream();
+                                  print('==> Stop recording!!');
+                                  var time = DateTime.now();
+
+                                  // var file = XFile(join('/storage/emulated/0/Download/', '$time.mp4'));
+                                  var file = await controller.stopVideoRecording();
+                                  await file.saveTo(join('/storage/emulated/0/Download/', '$time.mp4'));
                                 }
-
-
-
-                                // while (recording) {
-                                //   var time = DateTime.now();
-                                //   // ,(await getApplicationSupportDirectory()).path
-                                //   var path = join(
-                                //       '/storage/emulated/0/Download/img/',
-                                //       'img_$time.png');
-                                //   var data = join(
-                                //       '/storage/emulated/0/Download/imu/',
-                                //       'imu_$time.txt');
-                                //   print('$path  =  $data');
-                                //
-                                //   setState(() {
-                                //     log =
-                                //         'image path: $path\nimu data path: $data';
-                                //   });
-                                //
-                                //   try {
-                                //     File file = File(data);
-                                //     IOSink imu =
-                                //         file.openWrite(mode: FileMode.append);
-                                //     String strAccelerometer = accelerometer!.join(' ');
-                                //     String strUserAccelerometer = userAccelerometer!.join(' ');
-                                //     String strGyroscope = gyroscope!.join(' ');
-                                //
-                                //     IOSink totalImuSink = totalFile.openWrite(mode: FileMode.append);
-                                //
-                                //     totalImuSink.write(
-                                //         '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n\n');
-                                //     imu.write(
-                                //         '$strAccelerometer\n$strUserAccelerometer\n$strGyroscope');
-                                //
-                                //     imu.close();
-                                //     totalImuSink.close();
-                                //
-                                //
-                                //     // print('logging imu success');
-                                //
-                                //     XFile pic = await controller.takePicture();
-                                //     pic.saveTo(path);
-                                //
-                                //     // print('capture success');
-                                //     // print('====================');
-                                //   } catch (e) {
-                                //     // If an error occurs, log the error to the console.
-                                //     print(e);
-                                //   }
-                                //
-                                //
-                                //   sleep(const Duration(microseconds: 84));
-                                // }
-
+                                recording = !recording;
                               },
                               backgroundColor:
                                   recording ? Colors.red : Colors.white,
@@ -313,14 +220,13 @@ class _MyHomePageState extends State<MyHomePage> {
                       break;
 
                     case 3:
-                      _deleteFile('/storage/emulated/0/Download/img/');
-                      _deleteFile('/storage/emulated/0/Download/imu/');
+                      _deleteFile('/storage/emulated/0/Download/');
                       print('cleared !!');
                       break;
                   }
                 },
 
-                buttons: [
+                buttons: const [
                   Icons.looks_one,
                   Icons.looks_two,
                   Icons.looks_3,
