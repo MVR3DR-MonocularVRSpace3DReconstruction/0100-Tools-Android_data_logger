@@ -61,6 +61,7 @@ android {
 
 flutter {
     source '../..'
+    target 'lib/back.dart'
 }
 
 dependencies {
