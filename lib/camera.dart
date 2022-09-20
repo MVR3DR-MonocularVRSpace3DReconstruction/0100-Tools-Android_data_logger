@@ -8,7 +8,12 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'main.dart';
 
 class VideoRecorderExample extends StatefulWidget {
-  const VideoRecorderExample({Key? key}) : super(key: key);
+  final String timestamp;
+  final String strAccelerometer;
+  final String strUserAccelerometer;
+  final String strGyroscope;
+  final String strMagnetometer;
+  const VideoRecorderExample({Key? key, required this.timestamp,required this.strAccelerometer,required this.strUserAccelerometer,required this.strGyroscope,required this.strMagnetometer}) : super(key: key);
 
   @override
   _VideoRecorderExampleState createState() {
@@ -26,21 +31,15 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   late int selectedCameraIdx;
 
   // imu
-  String timestamp = MyAppState.timestamp;
-  String strAccelerometer = MyAppState.strAccelerometer;
-  String strUserAccelerometer = MyAppState.strUserAccelerometer;
-  String strGyroscope = MyAppState.strGyroscope;
-  String strMagnetometer = MyAppState.strMagnetometer;
+  get timestamp => widget.timestamp;
+  get strUserAccelerometer => widget.strUserAccelerometer;
+  get strAccelerometer => widget.strAccelerometer;
+  get strGyroscope => widget.strGyroscope;
+  get strMagnetometer => widget.strMagnetometer;
 
   @override
   void initState() {
     super.initState();
-
-    timestamp = MyAppState.timestamp;
-    strAccelerometer = MyAppState.strAccelerometer;
-    strUserAccelerometer = MyAppState.strUserAccelerometer;
-    strGyroscope = MyAppState.strGyroscope;
-    strMagnetometer = MyAppState.strMagnetometer;
 
     availableCameras().then((value) {
       cameras = value;
@@ -57,6 +56,7 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   @override
   Widget build(BuildContext context) {
 
+    // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
     if (controller.value.isRecordingVideo) {
       File imuFile = File(logPath);
       IOSink imuSink = imuFile.openWrite(mode: FileMode.append);

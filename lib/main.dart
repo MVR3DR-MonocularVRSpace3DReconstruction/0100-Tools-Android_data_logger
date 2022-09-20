@@ -71,7 +71,7 @@ class MyAppState extends State<MyApp> {
       strMagnetometer = magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
     });
 
-    print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
+    // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
     setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
     return MaterialApp(
       theme: ThemeData.dark(),
@@ -80,9 +80,18 @@ class MyAppState extends State<MyApp> {
           alignment: Alignment.center,
           // 设置当前索引
           index: _selectedIndex,
-          children: const [
-            VideoRecorderExample(),
-            IMUData(),
+          children: [
+            VideoRecorderExample(timestamp: timestamp,
+              strUserAccelerometer: strUserAccelerometer,
+              strGyroscope: strGyroscope,
+              strMagnetometer: strMagnetometer,
+              strAccelerometer: strAccelerometer,),
+            IMUData(
+              timestamp: timestamp,
+              strUserAccelerometer: strUserAccelerometer,
+              strGyroscope: strGyroscope,
+              strMagnetometer: strMagnetometer,
+              strAccelerometer: strAccelerometer,),
             Track(),
             Settings(),
           ],
@@ -209,7 +218,6 @@ class MyAppState extends State<MyApp> {
     strUserAccelerometer = userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
     strGyroscope = gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
     strMagnetometer = magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-
 
   }
 

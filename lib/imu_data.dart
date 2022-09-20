@@ -6,7 +6,12 @@ import 'package:flutter/material.dart';
 const int decimalPoints = 11;
 
 class IMUData extends StatefulWidget {
-  const IMUData({Key? key}) : super(key: key);
+  final String timestamp;
+  final String strAccelerometer;
+  final String strUserAccelerometer;
+  final String strGyroscope;
+  final String strMagnetometer;
+  const IMUData({Key? key, required this.timestamp,required this.strAccelerometer,required this.strUserAccelerometer,required this.strGyroscope,required this.strMagnetometer}) : super(key: key);
 
   @override
   IMUDataState createState() => IMUDataState();
@@ -14,24 +19,17 @@ class IMUData extends StatefulWidget {
 
 class IMUDataState extends State<IMUData> {
 
-  String timestamp = MyAppState.timestamp;
-  String strAccelerometer = MyAppState.strAccelerometer;
-  String strUserAccelerometer = MyAppState.strUserAccelerometer;
-  String strGyroscope = MyAppState.strGyroscope;
-  String strMagnetometer = MyAppState.strMagnetometer;
+  get timestamp => widget.timestamp;
+  get strUserAccelerometer => widget.strUserAccelerometer;
+  get strAccelerometer => widget.strAccelerometer;
+  get strGyroscope => widget.strGyroscope;
+  get strMagnetometer => widget.strMagnetometer;
 
-  @override
-  void initState() {
-    super.initState();
-    timestamp = MyAppState.timestamp;
-    strAccelerometer = MyAppState.strAccelerometer;
-    strUserAccelerometer = MyAppState.strUserAccelerometer;
-    strGyroscope = MyAppState.strGyroscope;
-    strMagnetometer = MyAppState.strMagnetometer;
-  }
   @override
   Widget build(BuildContext context) {
 
+
+    // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
     String log = '$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n';
 
     MyAppState.setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
