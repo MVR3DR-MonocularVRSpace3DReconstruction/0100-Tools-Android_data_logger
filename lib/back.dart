@@ -299,14 +299,6 @@ class _MyHomePageState extends State<MyHomePage> {
   //   }
   // }
 
-  @override
-  void dispose() {
-    controller!.dispose();
-    super.dispose();
-    for (final subscription in _streamSubscriptions) {
-      subscription.cancel();
-    }
-  }
 
 
 }

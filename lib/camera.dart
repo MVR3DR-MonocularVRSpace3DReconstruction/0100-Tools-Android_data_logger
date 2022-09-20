@@ -3,13 +3,9 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_player/video_player.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 
-const int decimalPoints = 7;
+import 'main.dart';
 
 class VideoRecorderExample extends StatefulWidget {
   const VideoRecorderExample({Key? key}) : super(key: key);
@@ -22,69 +18,29 @@ class VideoRecorderExample extends StatefulWidget {
 
 class _VideoRecorderExampleState extends State<VideoRecorderExample> {
 
-  //imu
-  List<double>? _accelerometerValues;
-  List<double>? _userAccelerometerValues;
-  List<double>? _gyroscopeValues;
-  List<double>? _magnetometerValues;
-  final _streamSubscriptions = <StreamSubscription<dynamic>>[];
-
-  //camera
+  // camera
   late CameraController controller;
   late String videoPath;
   late String logPath;
-
   List<CameraDescription>? cameras;
   late int selectedCameraIdx;
 
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-
-
+  // imu
+  String timestamp = MyAppState.timestamp;
+  String strAccelerometer = MyAppState.strAccelerometer;
+  String strUserAccelerometer = MyAppState.strUserAccelerometer;
+  String strGyroscope = MyAppState.strGyroscope;
+  String strMagnetometer = MyAppState.strMagnetometer;
 
   @override
   void initState() {
     super.initState();
 
-
-    _streamSubscriptions.add(
-      accelerometerEvents.listen(
-            (AccelerometerEvent event) {
-          setState(() {
-            _accelerometerValues = <double>[event.x, event.y, event.z];
-          });
-        },
-      ),
-    );
-    _streamSubscriptions.add(
-      gyroscopeEvents.listen(
-            (GyroscopeEvent event) {
-          setState(() {
-            _gyroscopeValues = <double>[event.x, event.y, event.z];
-          });
-        },
-      ),
-    );
-    _streamSubscriptions.add(
-      userAccelerometerEvents.listen(
-            (UserAccelerometerEvent event) {
-          setState(() {
-            _userAccelerometerValues = <double>[event.x, event.y, event.z];
-          });
-        },
-      ),
-    );
-    _streamSubscriptions.add(
-      magnetometerEvents.listen(
-            (MagnetometerEvent event) {
-          setState(() {
-            _magnetometerValues = <double>[event.x, event.y, event.z];
-          });
-        },
-      ),
-    );
-
-
+    timestamp = MyAppState.timestamp;
+    strAccelerometer = MyAppState.strAccelerometer;
+    strUserAccelerometer = MyAppState.strUserAccelerometer;
+    strGyroscope = MyAppState.strGyroscope;
+    strMagnetometer = MyAppState.strMagnetometer;
 
     availableCameras().then((value) {
       cameras = value;
@@ -95,43 +51,18 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
       });
       _onCameraSwitched(cameras![selectedCameraIdx]);
     });
-
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-    for (final subscription in _streamSubscriptions) {
-      subscription.cancel();
-    }
-  }
-
 
 
   @override
   Widget build(BuildContext context) {
 
-    final accelerometer = _accelerometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
-    final gyroscope = _gyroscopeValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
-    final userAccelerometer = _userAccelerometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
-    final magnetometer = _magnetometerValues?.map((double v) => v.toStringAsFixed(decimalPoints)).toList();
-
-    String timestamp = DateTime.now().toString();
-    String strAccelerometer = accelerometer!.join(' ');
-    String strUserAccelerometer = userAccelerometer!.join(' ');
-    String strGyroscope = gyroscope!.join(' ');
-    String strMagnetometer = magnetometer!.join(' ');
-
     if (controller.value.isRecordingVideo) {
-      // print('recording!!');
       File imuFile = File(logPath);
       IOSink imuSink = imuFile.openWrite(mode: FileMode.append);
       imuSink.write('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
       imuSink.close();
-
     }
-
-
 
     final downloadDir = Directory('/storage/emulated/0/Download/Logger/');
     downloadDir.exists().then((value) {
@@ -140,18 +71,18 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
       }
     } );
 
-
+    // _onSwitchCamera();
+    MyAppState.setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
-        title: const Text('首先你要考虑怎么把它变成RGBD'),
+        title: const Text('CAMERA'),
         centerTitle: true,
       ),
       body: Column(
         children: <Widget>[
           Expanded(
             child: Container(
-                  child: _cameraPreviewWidget(timestamp,strAccelerometer,strUserAccelerometer,strGyroscope,strMagnetometer),
+              child: _cameraPreviewWidget(timestamp,strAccelerometer,strUserAccelerometer,strGyroscope,strMagnetometer),
             ),
           ),
           Padding(
@@ -188,6 +119,7 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   // Display 'Loading' text when the camera is still loading.
   Widget _cameraPreviewWidget(timestamp,strAccelerometer,strUserAccelerometer,strGyroscope,strMagnetometer) {
     if (!controller.value.isInitialized) {
+      print("Isn't initialized");
       return const Text(
         'Loading',
         style: TextStyle(
@@ -201,7 +133,7 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
     return AspectRatio(
       aspectRatio: controller.value.aspectRatio,
       child: CameraPreview(
-          controller,
+        controller,
         child: Text('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n'),
       ),
     );
@@ -257,8 +189,6 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
       ),
     );
   }
-
-  String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
   Future<void> _onCameraSwitched(CameraDescription cameraDescription) async {
     await controller.dispose();
@@ -321,8 +251,6 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
       }
     });
   }
-
-
 
   void _onStopButtonPressed() {
     _stopVideoRecording().then((XFile? F) async {
