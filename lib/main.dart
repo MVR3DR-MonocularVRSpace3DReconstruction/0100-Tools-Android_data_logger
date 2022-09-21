@@ -51,54 +51,55 @@ class MyAppState extends State<MyApp> {
 
   int _selectedIndex = 0;
   Color _buttonColor = const Color.fromRGBO(255, 255, 255, 1);
+  @override
+  void initState() {
+    super.initState();
+
+    motionSensors.accelerometer.listen((AccelerometerEvent event) {
+      setState(() {
+        accelerometerValues = <double>[event.x, event.y, event.z];
+      });
+    });
+    motionSensors.userAccelerometer.listen((UserAccelerometerEvent event) {
+      setState(() {
+        userAccelerometerValues = <double>[event.x, event.y, event.z];
+      });
+    });
+    motionSensors.gyroscope.listen((GyroscopeEvent event) {
+      setState(() {
+        gyroscopeValues = <double>[event.x, event.y, event.z];
+      });
+    });
+    motionSensors.magnetometer.listen((MagnetometerEvent event) {
+      setState(() {
+        magnetometerValues = <double>[event.x, event.y, event.z];
+      });
+    });
+    motionSensors.isOrientationAvailable().then((available) {
+      if (available) {
+        motionSensors.orientation.listen((OrientationEvent event) {
+          setState(() {
+            orientationValues = <double>[event.yaw, event.pitch, event.roll];
+          });
+        });
+      }
+    });
+    motionSensors.absoluteOrientation.listen((AbsoluteOrientationEvent event) {
+      setState(() {
+        absoluteOrientationValues = <double>[event.yaw, event.pitch, event.roll];
+      });
+    });
+
+    setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
+  }
 
   @override
   Widget build(BuildContext context) {
 
     setState(() {
-
-      motionSensors.accelerometer.listen((AccelerometerEvent event) {
-        setState(() {
-          accelerometerValues = <double>[event.x, event.y, event.z];
-        });
-      });
-      motionSensors.userAccelerometer.listen((UserAccelerometerEvent event) {
-        setState(() {
-          userAccelerometerValues = <double>[event.x, event.y, event.z];
-        });
-      });
-      motionSensors.gyroscope.listen((GyroscopeEvent event) {
-        setState(() {
-          gyroscopeValues = <double>[event.x, event.y, event.z];
-        });
-      });
-      motionSensors.magnetometer.listen((MagnetometerEvent event) {
-        setState(() {
-          magnetometerValues = <double>[event.x, event.y, event.z];
-        });
-      });
-      motionSensors.isOrientationAvailable().then((available) {
-        if (available) {
-          motionSensors.orientation.listen((OrientationEvent event) {
-            setState(() {
-              orientationValues = <double>[event.yaw, event.pitch, event.roll];
-            });
-          });
-        }
-      });
-      motionSensors.absoluteOrientation.listen((AbsoluteOrientationEvent event) {
-        setState(() {
-          absoluteOrientationValues = <double>[event.yaw, event.pitch, event.roll];
-        });
-      });
-
       timestamp = DateTime.now().toString();
-      setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
-
     });
 
-    // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
-    // setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
     return MaterialApp(
       theme: ThemeData.dark(),
       home: Scaffold(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'camera.dart';
 
@@ -39,9 +40,9 @@ class _TrackState extends State<Track> {
         child: Transform(
           transform: Matrix4.identity()
             ..setEntry(3, 2, 0.003) // col = 2, row = 3 & 0.003 = depth perception in the Z direction
-            ..rotateX(-y)
-            ..rotateY(x)
-            ..rotateZ(90+z),
+            ..rotateX((x>0?y:-y)/2 + pi/2)
+            ..rotateY(-x),
+            // ..rotateZ(pi/2+y),
           // transform: Matrix4(
           //   1, 0, 0, 0,
           //   0, 1, 0, 0,
@@ -50,9 +51,13 @@ class _TrackState extends State<Track> {
           // )..rotateX(x),
           alignment: FractionalOffset.center,
           child: Container(
-              color: Colors.red,
               height: 200.0,
-              width: 200.0,
+              width: 100.0,
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: const BorderRadius.all( Radius.circular(4.0)),
+                border: Border.all(width: 2, color: Colors.white),
+              ),
             ),
           ),
 
