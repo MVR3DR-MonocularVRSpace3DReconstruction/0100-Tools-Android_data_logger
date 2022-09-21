@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -26,12 +27,12 @@ class VideoRecorderExample extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _VideoRecorderExampleState createState() {
-    return _VideoRecorderExampleState();
+  VideoRecorderExampleState createState() {
+    return VideoRecorderExampleState();
   }
 }
 
-class _VideoRecorderExampleState extends State<VideoRecorderExample> {
+class VideoRecorderExampleState extends State<VideoRecorderExample> {
 
   // camera
   late CameraController controller;
@@ -49,17 +50,12 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   late String strOrientation;
   late String strAbsoluteOrientation;
 
+  late String strAbsoluteOrientationDegreeRebase;
+  late String strAbsoluteOrientationDegree;
+  static List<double> baseOrientation = [0, 0, 0];
   @override
   void initState() {
     super.initState();
-    timestamp = widget.timestamp;
-    strAccelerometer = widget.accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strUserAccelerometer = widget.userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strGyroscope = widget.gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strMagnetometer = widget.magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strOrientation = widget.orientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strAbsoluteOrientation = widget.absoluteOrientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-
     availableCameras().then((value) {
       cameras = value;
       controller = CameraController(cameras![0], ResolutionPreset.low);
@@ -80,8 +76,11 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
       strUserAccelerometer = widget.userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
       strGyroscope = widget.gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
       strMagnetometer = widget.magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+
       strOrientation = widget.orientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
       strAbsoluteOrientation = widget.absoluteOrientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      // strAbsoluteOrientationDegreeRebase = widget.absoluteOrientationValues!.asMap().entries.map((v) => (((v.value - baseOrientation[v.key]) % pi) * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAbsoluteOrientationDegree = widget.absoluteOrientationValues!.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
     });
 
     // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
@@ -93,8 +92,9 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
           '$strUserAccelerometer\n'
           '$strGyroscope\n'
           '$strMagnetometer\n'
+
           '$strOrientation\n'
-          '$strAbsoluteOrientation\n\n');
+          '$strAbsoluteOrientationDegree\n\n');
       imuSink.close();
     }
 
@@ -117,14 +117,17 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
           Expanded(
             child: Container(
               child: _cameraPreviewWidget(
-                  timestamp,
-                  strAccelerometer,
-                  strUserAccelerometer,
-                  strGyroscope,
-                  strMagnetometer,
-                  strOrientation,
-                  strAbsoluteOrientation,
-              ),
+                  '$timestamp\n'
+                  'Accelerometer:\t$strAccelerometer\n'
+                  'UserAccelerometer:\t$strUserAccelerometer\n'
+                  'Gyroscope:\t$strGyroscope\n'
+                  'Magnetometer:\t$strMagnetometer\n\n'
+
+                  'Orientation:\n$strOrientation\n'
+                  'AbsoluteOrientationDegree:\n$strAbsoluteOrientationDegree\n'
+                  // 'AbsoluteOrientationDegreeRebase:\n$strAbsoluteOrientationDegreeRebase\n'
+                  // 'BaseOrientation:\t${baseOrientation.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ')}'
+                      '\n\n'),
             ),
           ),
           Padding(
@@ -134,6 +137,15 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
               children: <Widget>[
                 _cameraTogglesRowWidget(),
                 _captureControlRowWidget(),
+                IconButton(
+                  icon: const Icon(Icons.stop),
+                  color: Colors.deepOrange,
+                  onPressed: controller.value.isInitialized &&
+                      controller.value.isRecordingVideo
+                      ? _onStopButtonPressed
+                      : null,
+                ),
+
                 const Expanded(
                   child: SizedBox(),
                 ),
@@ -159,15 +171,7 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   }
 
   // Display 'Loading' text when the camera is still loading.
-  Widget _cameraPreviewWidget(
-      timestamp,
-      strAccelerometer,
-      strUserAccelerometer,
-      strGyroscope,
-      strMagnetometer,
-      strOrientation,
-      strAbsoluteOrientation,
-      ) {
+  Widget _cameraPreviewWidget(logs) {
     if (!controller.value.isInitialized) {
       print("Isn't initialized");
       return const Text(
@@ -184,13 +188,7 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
       aspectRatio: controller.value.aspectRatio,
       child: CameraPreview(
         controller,
-        child: Text('$timestamp\n'
-            '$strAccelerometer\n'
-            '$strUserAccelerometer\n'
-            '$strGyroscope\n'
-            '$strMagnetometer\n'
-            '$strOrientation\n'
-            '$strAbsoluteOrientation\n\n'),
+        child: Text(logs, style: const TextStyle(color: Colors.white30)),
       ),
     );
   }
@@ -232,17 +230,30 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
                   ? _onRecordButtonPressed
                   : null,
             ),
+
+            // Log Base Orientation
             IconButton(
-              icon: const Icon(Icons.stop),
-              color: Colors.deepOrange,
-              onPressed: controller.value.isInitialized &&
-                  controller.value.isRecordingVideo
-                  ? _onStopButtonPressed
-                  : null,
-            )
+              icon: const Icon(Icons.pages),
+              color: Colors.white,
+              onPressed: _logBaseOrientation,
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  _logBaseOrientation() {
+    setState(() {
+      baseOrientation = widget.absoluteOrientationValues!;
+    });
+    Fluttertoast.showToast(
+        msg: 'Logged Base Orientation $baseOrientation',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.grey,
+        textColor: Colors.white
     );
   }
 

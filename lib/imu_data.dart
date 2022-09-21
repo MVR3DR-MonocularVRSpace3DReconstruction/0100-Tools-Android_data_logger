@@ -4,6 +4,7 @@ import 'dart:math';
 import 'main.dart';
 import 'package:flutter/material.dart';
 
+
 const int decimalPoints = 11;
 
 class IMUData extends StatefulWidget {
@@ -41,19 +42,6 @@ class IMUDataState extends State<IMUData> {
 
   late String strAbsoluteOrientationDegree;
 
-  @override
-  void initState() {
-    super.initState();
-    timestamp = widget.timestamp;
-    strAccelerometer = widget.accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strUserAccelerometer = widget.userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strGyroscope = widget.gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strMagnetometer = widget.magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strOrientation = widget.orientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strAbsoluteOrientation = widget.absoluteOrientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-
-    strAbsoluteOrientationDegree = widget.absoluteOrientationValues!.map((double v) => (v * (pi/180)).toStringAsFixed(decimalPoints)).toList().join(' ');
-  }
   @override
   Widget build(BuildContext context) {
     setState(() {

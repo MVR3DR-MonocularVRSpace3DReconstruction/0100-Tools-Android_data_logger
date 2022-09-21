@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'camera.dart';
 
 class Track extends StatefulWidget{
 
@@ -26,9 +27,9 @@ class _TrackState extends State<Track> {
   @override
   Widget build(BuildContext context) {
     setState(() {
-      x = widget.orientationValues![0];
-      y = widget.orientationValues![1];
-      z = widget.orientationValues![2];
+      x = widget.orientationValues![0] - VideoRecorderExampleState.baseOrientation[0];
+      y = widget.orientationValues![1] - VideoRecorderExampleState.baseOrientation[1];
+      z = widget.orientationValues![2] - VideoRecorderExampleState.baseOrientation[2];
     });
 
     return Container(
