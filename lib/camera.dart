@@ -8,12 +8,22 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'main.dart';
 
 class VideoRecorderExample extends StatefulWidget {
-  final String timestamp;
-  final String strAccelerometer;
-  final String strUserAccelerometer;
-  final String strGyroscope;
-  final String strMagnetometer;
-  const VideoRecorderExample({Key? key, required this.timestamp,required this.strAccelerometer,required this.strUserAccelerometer,required this.strGyroscope,required this.strMagnetometer}) : super(key: key);
+  String timestamp;
+  List<double>? accelerometerValues = [0, 0, 0];
+  List<double>? userAccelerometerValues = [0, 0, 0];
+  List<double>? gyroscopeValues = [0, 0, 0];
+  List<double>? magnetometerValues = [0, 0, 0];
+  List<double>? orientationValues = [0, 0, 0];
+  List<double>? absoluteOrientationValues = [0, 0, 0];
+  VideoRecorderExample({Key? key,
+    required this.timestamp,
+    required this.accelerometerValues,
+    required this.userAccelerometerValues,
+    required this.gyroscopeValues,
+    required this.magnetometerValues,
+    required this.orientationValues,
+    required this.absoluteOrientationValues,
+  }) : super(key: key);
 
   @override
   _VideoRecorderExampleState createState() {
@@ -31,19 +41,27 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   late int selectedCameraIdx;
 
   // imu
-  get timestamp => widget.timestamp;
-  get strUserAccelerometer => widget.strUserAccelerometer;
-  get strAccelerometer => widget.strAccelerometer;
-  get strGyroscope => widget.strGyroscope;
-  get strMagnetometer => widget.strMagnetometer;
+  late String timestamp;
+  late String strAccelerometer;
+  late String strUserAccelerometer;
+  late String strGyroscope;
+  late String strMagnetometer;
+  late String strOrientation;
+  late String strAbsoluteOrientation;
 
   @override
   void initState() {
     super.initState();
+    timestamp = widget.timestamp;
+    strAccelerometer = widget.accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+    strUserAccelerometer = widget.userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+    strGyroscope = widget.gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+    strMagnetometer = widget.magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+    strOrientation = widget.orientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+    strAbsoluteOrientation = widget.absoluteOrientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
 
     availableCameras().then((value) {
       cameras = value;
-      // print(cameras!.length);
       controller = CameraController(cameras![0], ResolutionPreset.low);
       setState(() {
         selectedCameraIdx = 0;
@@ -56,11 +74,27 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   @override
   Widget build(BuildContext context) {
 
+    setState(() {
+      timestamp = widget.timestamp;
+      strAccelerometer = widget.accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strUserAccelerometer = widget.userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strGyroscope = widget.gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strMagnetometer = widget.magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strOrientation = widget.orientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAbsoluteOrientation = widget.absoluteOrientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+    });
+
     // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
     if (controller.value.isRecordingVideo) {
       File imuFile = File(logPath);
       IOSink imuSink = imuFile.openWrite(mode: FileMode.append);
-      imuSink.write('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
+      imuSink.write('$timestamp\n'
+          '$strAccelerometer\n'
+          '$strUserAccelerometer\n'
+          '$strGyroscope\n'
+          '$strMagnetometer\n'
+          '$strOrientation\n'
+          '$strAbsoluteOrientation\n\n');
       imuSink.close();
     }
 
@@ -72,7 +106,7 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
     } );
 
     // _onSwitchCamera();
-    MyAppState.setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
+    // MyAppState.setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
     return Scaffold(
       appBar: AppBar(
         title: const Text('CAMERA'),
@@ -82,7 +116,15 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
         children: <Widget>[
           Expanded(
             child: Container(
-              child: _cameraPreviewWidget(timestamp,strAccelerometer,strUserAccelerometer,strGyroscope,strMagnetometer),
+              child: _cameraPreviewWidget(
+                  timestamp,
+                  strAccelerometer,
+                  strUserAccelerometer,
+                  strGyroscope,
+                  strMagnetometer,
+                  strOrientation,
+                  strAbsoluteOrientation,
+              ),
             ),
           ),
           Padding(
@@ -117,7 +159,15 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
   }
 
   // Display 'Loading' text when the camera is still loading.
-  Widget _cameraPreviewWidget(timestamp,strAccelerometer,strUserAccelerometer,strGyroscope,strMagnetometer) {
+  Widget _cameraPreviewWidget(
+      timestamp,
+      strAccelerometer,
+      strUserAccelerometer,
+      strGyroscope,
+      strMagnetometer,
+      strOrientation,
+      strAbsoluteOrientation,
+      ) {
     if (!controller.value.isInitialized) {
       print("Isn't initialized");
       return const Text(
@@ -134,7 +184,13 @@ class _VideoRecorderExampleState extends State<VideoRecorderExample> {
       aspectRatio: controller.value.aspectRatio,
       child: CameraPreview(
         controller,
-        child: Text('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n'),
+        child: Text('$timestamp\n'
+            '$strAccelerometer\n'
+            '$strUserAccelerometer\n'
+            '$strGyroscope\n'
+            '$strMagnetometer\n'
+            '$strOrientation\n'
+            '$strAbsoluteOrientation\n\n'),
       ),
     );
   }

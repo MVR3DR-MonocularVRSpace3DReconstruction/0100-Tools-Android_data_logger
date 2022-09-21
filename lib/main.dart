@@ -41,38 +41,64 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  late List<double>? accelerometerValues = [0, 0, 0];
-  late List<double>? userAccelerometerValues = [0, 0, 0];
-  late List<double>? gyroscopeValues = [0, 0, 0];
-  late List<double>? magnetometerValues = [0, 0, 0];
-  late List<double>? orientationValues = [0, 0, 0];
-  late List<double>? absoluteOrientationValues = [0, 0, 0];
-  late List<double>? absoluteOrientation2Values = [0, 0, 0];
-  final _streamSubscriptions = <StreamSubscription<dynamic>>[];
-
-  static late String timestamp;
-  static late String strAccelerometer;
-  static late String strUserAccelerometer;
-  static late String strGyroscope;
-  static late String strMagnetometer;
+  late String timestamp;
+  late List<double>? accelerometerValues;
+  late List<double>? userAccelerometerValues;
+  late List<double>? gyroscopeValues;
+  late List<double>? magnetometerValues;
+  late List<double>? orientationValues;
+  late List<double>? absoluteOrientationValues;
 
   int _selectedIndex = 0;
-  // final pages = const [VideoRecorderExample(), IMUData(), Track(), Settings()];
   Color _buttonColor = const Color.fromRGBO(255, 255, 255, 1);
 
   @override
   Widget build(BuildContext context) {
 
     setState(() {
+
+      motionSensors.accelerometer.listen((AccelerometerEvent event) {
+        setState(() {
+          accelerometerValues = <double>[event.x, event.y, event.z];
+        });
+      });
+      motionSensors.userAccelerometer.listen((UserAccelerometerEvent event) {
+        setState(() {
+          userAccelerometerValues = <double>[event.x, event.y, event.z];
+        });
+      });
+      motionSensors.gyroscope.listen((GyroscopeEvent event) {
+        setState(() {
+          gyroscopeValues = <double>[event.x, event.y, event.z];
+        });
+      });
+      motionSensors.magnetometer.listen((MagnetometerEvent event) {
+        setState(() {
+          magnetometerValues = <double>[event.x, event.y, event.z];
+        });
+      });
+      motionSensors.isOrientationAvailable().then((available) {
+        if (available) {
+          motionSensors.orientation.listen((OrientationEvent event) {
+            setState(() {
+              orientationValues = <double>[event.yaw, event.pitch, event.roll];
+            });
+          });
+        }
+      });
+      motionSensors.absoluteOrientation.listen((AbsoluteOrientationEvent event) {
+        setState(() {
+          absoluteOrientationValues = <double>[event.yaw, event.pitch, event.roll];
+        });
+      });
+
       timestamp = DateTime.now().toString();
-      strAccelerometer = accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strUserAccelerometer = userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strGyroscope = gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strMagnetometer = magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
+
     });
 
     // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
-    setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
+    // setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
     return MaterialApp(
       theme: ThemeData.dark(),
       home: Scaffold(
@@ -81,18 +107,28 @@ class MyAppState extends State<MyApp> {
           // 设置当前索引
           index: _selectedIndex,
           children: [
-            VideoRecorderExample(timestamp: timestamp,
-              strUserAccelerometer: strUserAccelerometer,
-              strGyroscope: strGyroscope,
-              strMagnetometer: strMagnetometer,
-              strAccelerometer: strAccelerometer,),
+            VideoRecorderExample(
+              timestamp: timestamp,
+              userAccelerometerValues: accelerometerValues,
+              gyroscopeValues: gyroscopeValues,
+              magnetometerValues: magnetometerValues,
+              accelerometerValues: accelerometerValues,
+              orientationValues: orientationValues,
+              absoluteOrientationValues: absoluteOrientationValues,
+            ),
             IMUData(
               timestamp: timestamp,
-              strUserAccelerometer: strUserAccelerometer,
-              strGyroscope: strGyroscope,
-              strMagnetometer: strMagnetometer,
-              strAccelerometer: strAccelerometer,),
-            Track(),
+              userAccelerometerValues: accelerometerValues,
+              gyroscopeValues: gyroscopeValues,
+              magnetometerValues: magnetometerValues,
+              accelerometerValues: accelerometerValues,
+              orientationValues: orientationValues,
+              absoluteOrientationValues: absoluteOrientationValues,
+            ),
+            Track(
+              orientationValues: orientationValues,
+              absoluteOrientationValues: absoluteOrientationValues,
+            ),
             Settings(),
           ],
         ),
@@ -127,7 +163,7 @@ class MyAppState extends State<MyApp> {
   }
 
 
-  static void setUpdateInterval(int? groupValue, int interval) {
+  void setUpdateInterval(int interval) {
     motionSensors.accelerometerUpdateInterval = interval;
     motionSensors.userAccelerometerUpdateInterval = interval;
     motionSensors.gyroscopeUpdateInterval = interval;
@@ -136,104 +172,11 @@ class MyAppState extends State<MyApp> {
     motionSensors.absoluteOrientationUpdateInterval = interval;
   }
 
-
-  @override
-  void initState() {
-    super.initState();
-    //
-    // _streamSubscriptions.add(
-    //     motionSensors.gyroscope.listen((GyroscopeEvent event) {
-    //       setState(() {
-    //         gyroscopeValues = <double>[event.x, event.y, event.z];
-    //       });
-    //     })
-    // );
-    // _streamSubscriptions.add(
-    //     motionSensors.accelerometer.listen((AccelerometerEvent event) {
-    //       setState(() {
-    //         accelerometerValues = <double>[event.x, event.y, event.z];
-    //       });
-    //     })
-    // );
-    // _streamSubscriptions.add(
-    //     motionSensors.userAccelerometer.listen((UserAccelerometerEvent event) {
-    //       setState(() {
-    //         userAccelerometerValues = <double>[event.x, event.y, event.z];
-    //       });
-    //     })
-    // );
-    // _streamSubscriptions.add(
-    //     motionSensors.absoluteOrientation.listen((AbsoluteOrientationEvent event) {
-    //       setState(() {
-    //         absoluteOrientationValues = <double>[event.yaw, event.pitch, event.roll];
-    //       });
-    //     })
-    // );
-    //
-    // motionSensors.isOrientationAvailable().then((available) {
-    //   if (available) {
-    //     _streamSubscriptions.add(
-    //         motionSensors.orientation.listen((OrientationEvent event) {
-    //           setState(() {
-    //             orientationValues = <double>[event.yaw, event.pitch, event.roll];
-    //           });
-    //         })
-    //     );
-    //   }
-    // });
-
-
-    motionSensors.gyroscope.listen((GyroscopeEvent event) {
-      setState(() {
-        gyroscopeValues = <double>[event.x, event.y, event.z];
-      });
-    });
-    motionSensors.accelerometer.listen((AccelerometerEvent event) {
-      setState(() {
-        accelerometerValues = <double>[event.x, event.y, event.z];
-      });
-    });
-    motionSensors.userAccelerometer.listen((UserAccelerometerEvent event) {
-      setState(() {
-        userAccelerometerValues = <double>[event.x, event.y, event.z];
-      });
-    });
-    motionSensors.isOrientationAvailable().then((available) {
-      if (available) {
-        motionSensors.orientation.listen((OrientationEvent event) {
-          setState(() {
-            orientationValues = <double>[event.yaw, event.pitch, event.roll];
-          });
-        });
-      }
-    });
-    motionSensors.absoluteOrientation.listen((AbsoluteOrientationEvent event) {
-      setState(() {
-        absoluteOrientationValues = <double>[event.yaw, event.pitch, event.roll];
-      });
-    });
-
-    timestamp = DateTime.now().toString();
-    strAccelerometer = accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strUserAccelerometer = userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strGyroscope = gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-    strMagnetometer = magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-
-  }
-
   void _onItemTapped(int index) {
     setState(() {
       _buttonColor = Color.fromRGBO(Random().nextInt(256), Random().nextInt(256), Random().nextInt(256), 1);
       _selectedIndex = index;
     });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    for (final subscription in _streamSubscriptions) {
-      subscription.cancel();
-    }
   }
 
 }

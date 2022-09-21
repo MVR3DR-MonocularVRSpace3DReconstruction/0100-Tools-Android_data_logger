@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:motion_sensors/motion_sensors.dart';
 import 'package:path_provider/path_provider.dart';
+import 'main.dart';
 
 class Settings extends StatefulWidget{
   const Settings({Key? key}) : super(key: key);
@@ -14,45 +16,56 @@ class Settings extends StatefulWidget{
 class _SettingsState extends State<Settings> {
 
   Directory downloadDir = Directory('/storage/emulated/0/Download/Logger/');
-  var file;
-  void _listofFiles() async {
+  var _file;
+  void _listOfFiles() async {
     // directory = (await getApplicationDocumentsDirectory()).path;
     setState(() {
       downloadDir = Directory('/storage/emulated/0/Download/Logger/');
-      file = downloadDir.listSync();
+      _file = downloadDir.listSync();
     });
   }
 
-
-
+  int? _groupValue = 3;
+  void setUpdateInterval(int? value, int interval) {
+    motionSensors.accelerometerUpdateInterval = interval;
+    motionSensors.userAccelerometerUpdateInterval = interval;
+    motionSensors.gyroscopeUpdateInterval = interval;
+    motionSensors.magnetometerUpdateInterval = interval;
+    motionSensors.orientationUpdateInterval = interval;
+    motionSensors.absoluteOrientationUpdateInterval = interval;
+    setState(() {
+      _groupValue = value;
+    });
+  }
   @override
   Widget build(BuildContext context) {
-    _listofFiles();
+    setState(() {
+      _listOfFiles();
+    });
 
     return Container(
-      margin: EdgeInsets.all(20),
+      margin: const EdgeInsets.all(20),
       alignment: Alignment.center,
       // color: Colors.deepOrange,
       child: ListView(
         children: [
           Container(
             height: 200,
-            padding: EdgeInsets.all(10),
-            margin: EdgeInsets.only(top: 10,bottom: 10),
+            padding: const EdgeInsets.all(10),
+            margin: const EdgeInsets.only(top: 10,bottom: 10),
             color: Colors.black26,
             child: ListView.builder(
-                itemCount: file.length,
+                itemCount: _file.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return Text(file[index].toString());
+                  return Text(_file[index].toString());
             }),
           ),
 
           RaisedButton(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
+              children: const [
                 Icon(Icons.delete),
-
                 Text('   Clear Log data')
               ],
             ),
@@ -67,7 +80,31 @@ class _SettingsState extends State<Settings> {
                     backgroundColor: Colors.grey,
                     textColor: Colors.white
                 );
-          })
+          }),
+          Text('\n\n   Set IMU refresh frequency:'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Radio(
+                value: 1,
+                groupValue: _groupValue,
+                onChanged: (dynamic value) => setUpdateInterval(value, Duration.microsecondsPerSecond ~/ 1),
+              ),
+              const Text("1 FPS"),
+              Radio(
+                value: 2,
+                groupValue: _groupValue,
+                onChanged: (dynamic value) => setUpdateInterval(value, Duration.microsecondsPerSecond ~/ 30),
+              ),
+              const Text("30 FPS"),
+              Radio(
+                value: 3,
+                groupValue: _groupValue,
+                onChanged: (dynamic value) => setUpdateInterval(value, Duration.microsecondsPerSecond ~/ 60),
+              ),
+              const Text("60 FPS"),
+            ],
+          ),
         ],
       ),
     );
@@ -84,6 +121,8 @@ class _SettingsState extends State<Settings> {
       }
       directory.deleteSync();
     }
-
+    setState(() {
+      _listOfFiles();
+    });
   }
 }
