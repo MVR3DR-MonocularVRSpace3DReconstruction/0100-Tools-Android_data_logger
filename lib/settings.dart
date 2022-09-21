@@ -17,6 +17,7 @@ class _SettingsState extends State<Settings> {
 
   Directory downloadDir = Directory('/storage/emulated/0/Download/Logger/');
   var _file;
+  int? _groupValue=3;
   void _listOfFiles() async {
     // directory = (await getApplicationDocumentsDirectory()).path;
     setState(() {
@@ -25,18 +26,7 @@ class _SettingsState extends State<Settings> {
     });
   }
 
-  int? _groupValue = 3;
-  void setUpdateInterval(int? value, int interval) {
-    motionSensors.accelerometerUpdateInterval = interval;
-    motionSensors.userAccelerometerUpdateInterval = interval;
-    motionSensors.gyroscopeUpdateInterval = interval;
-    motionSensors.magnetometerUpdateInterval = interval;
-    motionSensors.orientationUpdateInterval = interval;
-    motionSensors.absoluteOrientationUpdateInterval = interval;
-    setState(() {
-      _groupValue = value;
-    });
-  }
+
   @override
   Widget build(BuildContext context) {
     setState(() {
@@ -57,7 +47,7 @@ class _SettingsState extends State<Settings> {
             child: ListView.builder(
                 itemCount: _file.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return Text(_file[index].toString());
+                  return Text(_file[index].toString().split('/')[6].substring(0,_file[index].toString().split('/')[6].length-1));
             }),
           ),
 
@@ -88,19 +78,34 @@ class _SettingsState extends State<Settings> {
               Radio(
                 value: 1,
                 groupValue: _groupValue,
-                onChanged: (dynamic value) => setUpdateInterval(value, Duration.microsecondsPerSecond ~/ 1),
+                onChanged: (dynamic value) => (() {
+                  MyAppState.setUpdateInterval(Duration.microsecondsPerSecond ~/ 1);
+                  setState(() {
+                    _groupValue = value;
+                  });
+                }),
               ),
               const Text("1 FPS"),
               Radio(
                 value: 2,
                 groupValue: _groupValue,
-                onChanged: (dynamic value) => setUpdateInterval(value, Duration.microsecondsPerSecond ~/ 30),
+                onChanged: (dynamic value) => (() {
+                  MyAppState.setUpdateInterval(Duration.microsecondsPerSecond ~/ 30);
+                  setState(() {
+                    _groupValue = value;
+                  });
+                }),
               ),
               const Text("30 FPS"),
               Radio(
                 value: 3,
                 groupValue: _groupValue,
-                onChanged: (dynamic value) => setUpdateInterval(value, Duration.microsecondsPerSecond ~/ 60),
+                onChanged: (dynamic value) => (() {
+                  MyAppState.setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
+                  setState(() {
+                    _groupValue = value;
+                  });
+                }),
               ),
               const Text("60 FPS"),
             ],

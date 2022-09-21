@@ -14,7 +14,7 @@ import 'track.dart';
 import 'settings.dart';
 
 import 'package:motion_sensors/motion_sensors.dart';
-
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 const int decimalPoints = 7;
 
 Future<void> main() async {
@@ -49,8 +49,16 @@ class MyAppState extends State<MyApp> {
   late List<double>? orientationValues;
   late List<double>? absoluteOrientationValues;
 
+  late List<double>? absoluteOrientationValues2;
+  Vector3 absoluteOrientationValues2V3 = Vector3.zero();
+
+  static late List<double>? integratedOrientationValues=[0, 0, 0];
+
+  static late int duration;
   int _selectedIndex = 0;
   Color _buttonColor = const Color.fromRGBO(255, 255, 255, 1);
+
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +76,10 @@ class MyAppState extends State<MyApp> {
     motionSensors.gyroscope.listen((GyroscopeEvent event) {
       setState(() {
         gyroscopeValues = <double>[event.x, event.y, event.z];
+        integratedOrientationValues = <double>[
+          integratedOrientationValues![0]+event.x*duration/10e6,
+          integratedOrientationValues![1]+event.y*duration/10e6,
+          integratedOrientationValues![2]+event.z*duration/10e6];
       });
     });
     motionSensors.magnetometer.listen((MagnetometerEvent event) {
@@ -90,6 +102,7 @@ class MyAppState extends State<MyApp> {
       });
     });
 
+    duration = Duration.microsecondsPerSecond ~/ 1;
     setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
   }
 
@@ -98,6 +111,14 @@ class MyAppState extends State<MyApp> {
 
     setState(() {
       timestamp = DateTime.now().toString();
+      integratedOrientationValues = <double>[
+        integratedOrientationValues![0]+gyroscopeValues![0],
+        integratedOrientationValues![1]+gyroscopeValues![1],
+        integratedOrientationValues![2]+gyroscopeValues![2]];
+
+
+      absoluteOrientationValues2V3.setFrom(motionSensors.getOrientation(motionSensors.getRotationMatrix(Vector3(accelerometerValues![0], accelerometerValues![1], accelerometerValues![2]), Vector3(magnetometerValues![0], magnetometerValues![1], magnetometerValues![2]))));
+      absoluteOrientationValues2 = [absoluteOrientationValues2V3.x, absoluteOrientationValues2V3.y, absoluteOrientationValues2V3.z];
     });
 
     return MaterialApp(
@@ -110,21 +131,28 @@ class MyAppState extends State<MyApp> {
           children: [
             VideoRecorderExample(
               timestamp: timestamp,
-              userAccelerometerValues: accelerometerValues,
-              gyroscopeValues: gyroscopeValues,
-              magnetometerValues: magnetometerValues,
-              accelerometerValues: accelerometerValues,
-              orientationValues: orientationValues,
-              absoluteOrientationValues: absoluteOrientationValues,
+              imuData: [
+                accelerometerValues,
+                userAccelerometerValues,
+                gyroscopeValues,
+                magnetometerValues,
+                orientationValues,
+                absoluteOrientationValues,
+                integratedOrientationValues,
+                absoluteOrientationValues2,
+              ],
             ),
             IMUData(
               timestamp: timestamp,
-              userAccelerometerValues: accelerometerValues,
-              gyroscopeValues: gyroscopeValues,
-              magnetometerValues: magnetometerValues,
-              accelerometerValues: accelerometerValues,
-              orientationValues: orientationValues,
-              absoluteOrientationValues: absoluteOrientationValues,
+              imuData: [
+                accelerometerValues,
+                userAccelerometerValues,
+                gyroscopeValues,
+                magnetometerValues,
+                orientationValues,
+                absoluteOrientationValues,
+                integratedOrientationValues,
+              ],
             ),
             Track(
               orientationValues: orientationValues,
@@ -164,14 +192,17 @@ class MyAppState extends State<MyApp> {
   }
 
 
-  void setUpdateInterval(int interval) {
+  static void setUpdateInterval(int interval) {
     motionSensors.accelerometerUpdateInterval = interval;
     motionSensors.userAccelerometerUpdateInterval = interval;
     motionSensors.gyroscopeUpdateInterval = interval;
     motionSensors.magnetometerUpdateInterval = interval;
     motionSensors.orientationUpdateInterval = interval;
     motionSensors.absoluteOrientationUpdateInterval = interval;
+
+    MyAppState.duration = interval;
   }
+
 
   void _onItemTapped(int index) {
     setState(() {

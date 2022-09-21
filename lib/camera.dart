@@ -10,20 +10,10 @@ import 'main.dart';
 
 class VideoRecorderExample extends StatefulWidget {
   String timestamp;
-  List<double>? accelerometerValues = [0, 0, 0];
-  List<double>? userAccelerometerValues = [0, 0, 0];
-  List<double>? gyroscopeValues = [0, 0, 0];
-  List<double>? magnetometerValues = [0, 0, 0];
-  List<double>? orientationValues = [0, 0, 0];
-  List<double>? absoluteOrientationValues = [0, 0, 0];
+  List<List<double>?> imuData;
   VideoRecorderExample({Key? key,
     required this.timestamp,
-    required this.accelerometerValues,
-    required this.userAccelerometerValues,
-    required this.gyroscopeValues,
-    required this.magnetometerValues,
-    required this.orientationValues,
-    required this.absoluteOrientationValues,
+    required this.imuData,
   }) : super(key: key);
 
   @override
@@ -47,12 +37,18 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
   late String strUserAccelerometer;
   late String strGyroscope;
   late String strMagnetometer;
+
   late String strOrientation;
   late String strAbsoluteOrientation;
+  late String strAbsoluteOrientation2;
 
-  late String strAbsoluteOrientationDegreeRebase;
   late String strAbsoluteOrientationDegree;
+
+  late String strIntegratedOrientation;
+  late String strIntegratedOrientationDirectionPredict;
   static List<double> baseOrientation = [0, 0, 0];
+
+
   @override
   void initState() {
     super.initState();
@@ -71,19 +67,31 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
   Widget build(BuildContext context) {
 
     setState(() {
+      // imuData: [
+      //   accelerometerValues,       0
+      //   userAccelerometerValues,   1
+      //   gyroscopeValues,           2
+      //   magnetometerValues,        3
+      //   orientationValues,         4
+      //   absoluteOrientationValues, 5
+      //   integratedOrientationValues,6
+      //   absoluteOrientationValues2 7
+      // ],
       timestamp = widget.timestamp;
-      strAccelerometer = widget.accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strUserAccelerometer = widget.userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strGyroscope = widget.gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strMagnetometer = widget.magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAccelerometer = widget.imuData[0]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strUserAccelerometer = widget.imuData[1]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strGyroscope = widget.imuData[2]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strMagnetometer = widget.imuData[3]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
 
-      strOrientation = widget.orientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strAbsoluteOrientation = widget.absoluteOrientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      // strAbsoluteOrientationDegreeRebase = widget.absoluteOrientationValues!.asMap().entries.map((v) => (((v.value - baseOrientation[v.key]) % pi) * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
-      strAbsoluteOrientationDegree = widget.absoluteOrientationValues!.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
+      strOrientation = widget.imuData[4]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAbsoluteOrientation = widget.imuData[5]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+
+      strIntegratedOrientation = widget.imuData[6]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strIntegratedOrientationDirectionPredict = widget.imuData[6]!.map((double v) => ((v * (180/pi))%360).toStringAsFixed(decimalPoints)).toList().join(' ');
+
+      strAbsoluteOrientation2 = widget.imuData[7]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
     });
 
-    // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
     if (controller.value.isRecordingVideo) {
       File imuFile = File(logPath);
       IOSink imuSink = imuFile.openWrite(mode: FileMode.append);
@@ -94,7 +102,9 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
           '$strMagnetometer\n'
 
           '$strOrientation\n'
-          '$strAbsoluteOrientationDegree\n\n');
+          '$strAbsoluteOrientationDegree\n'
+          '$strIntegratedOrientation\n'
+          '\n');
       imuSink.close();
     }
 
@@ -125,7 +135,9 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
 
                   'Orientation:\n$strOrientation\n'
                   'AbsoluteOrientationDegree:\n$strAbsoluteOrientationDegree\n'
-                  // 'AbsoluteOrientationDegreeRebase:\n$strAbsoluteOrientationDegreeRebase\n'
+                  'AbsoluteOrientation2:\n$strAbsoluteOrientation2\n'
+                  'IntegratedOrientation:\n$strIntegratedOrientation\n'
+                  'IntegratedOrientationDirectionPredict:\n$strIntegratedOrientationDirectionPredict\n'
                   // 'BaseOrientation:\t${baseOrientation.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ')}'
                       '\n\n'),
             ),
@@ -235,7 +247,7 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
             IconButton(
               icon: const Icon(Icons.pages),
               color: Colors.white,
-              onPressed: _logBaseOrientation,
+              onPressed: _resetOrientation,
             ),
           ],
         ),
@@ -243,12 +255,13 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
     );
   }
 
-  _logBaseOrientation() {
+  _resetOrientation() {
     setState(() {
-      baseOrientation = widget.absoluteOrientationValues!;
+      // baseOrientation = widget.imuData[5]!;
+      MyAppState.integratedOrientationValues = [0, 0, 0];
     });
     Fluttertoast.showToast(
-        msg: 'Logged Base Orientation $baseOrientation',
+        msg: 'Integrated Orientation Reset into: \n${MyAppState.integratedOrientationValues}',
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,

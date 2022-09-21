@@ -9,20 +9,10 @@ const int decimalPoints = 11;
 
 class IMUData extends StatefulWidget {
   String timestamp;
-  List<double>? accelerometerValues = [0, 0, 0];
-  List<double>? userAccelerometerValues = [0, 0, 0];
-  List<double>? gyroscopeValues = [0, 0, 0];
-  List<double>? magnetometerValues = [0, 0, 0];
-  List<double>? orientationValues = [0, 0, 0];
-  List<double>? absoluteOrientationValues = [0, 0, 0];
+  List<List<double>?> imuData;
   IMUData({Key? key,
     required this.timestamp,
-    required this.accelerometerValues,
-    required this.userAccelerometerValues,
-    required this.gyroscopeValues,
-    required this.magnetometerValues,
-    required this.orientationValues,
-    required this.absoluteOrientationValues,
+    required this.imuData,
   }) : super(key: key);
 
   @override
@@ -37,23 +27,39 @@ class IMUDataState extends State<IMUData> {
   late String strUserAccelerometer;
   late String strGyroscope;
   late String strMagnetometer;
+
   late String strOrientation;
   late String strAbsoluteOrientation;
 
+  late String strAbsoluteOrientationDegreeRebase;
   late String strAbsoluteOrientationDegree;
+
+  late String strIntegratedOrientation;
+  late String strIntegratedOrientationDirectionPredict;
 
   @override
   Widget build(BuildContext context) {
     setState(() {
+      // imuData: [
+      //   accelerometerValues,       0
+      //   userAccelerometerValues,   1
+      //   gyroscopeValues,           2
+      //   magnetometerValues,        3
+      //   orientationValues,         4
+      //   absoluteOrientationValues, 5
+      //   integratedOrientationValues,6
+      // ],
       timestamp = widget.timestamp;
-      strAccelerometer = widget.accelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strUserAccelerometer = widget.userAccelerometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strGyroscope = widget.gyroscopeValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strMagnetometer = widget.magnetometerValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strOrientation = widget.orientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strAbsoluteOrientation = widget.absoluteOrientationValues!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAccelerometer = widget.imuData[0]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strUserAccelerometer = widget.imuData[1]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strGyroscope = widget.imuData[2]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strMagnetometer = widget.imuData[3]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
 
-      strAbsoluteOrientationDegree = widget.absoluteOrientationValues!.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
+      strOrientation = widget.imuData[4]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAbsoluteOrientation = widget.imuData[5]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAbsoluteOrientationDegree = widget.imuData[5]!.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
+      strIntegratedOrientation = widget.imuData[6]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strIntegratedOrientationDirectionPredict = widget.imuData[6]!.map((double v) => ((v * (180/pi))%360).toStringAsFixed(decimalPoints)).toList().join(' ');
     });
 
     // print('$timestamp\n$strAccelerometer\n$strUserAccelerometer\n$strGyroscope\n$strMagnetometer\n\n');
@@ -64,7 +70,10 @@ class IMUDataState extends State<IMUData> {
         'Magnetometer: \n\t$strMagnetometer\n'
         'OrientationValues: \n\t$strOrientation\n'
         'AbsoluteOrientation(-π,π): \n\t$strAbsoluteOrientation\n'
-        'AbsoluteOrientation(-180,180): \n\t$strAbsoluteOrientationDegree\n\n';
+        'AbsoluteOrientation(-180,180): \n\t$strAbsoluteOrientationDegree\n'
+        'IntegratedOrientation(π): \n\t$strIntegratedOrientation\n'
+        'IntegratedOrientationDirectionPredict(0,360): \n\t$strIntegratedOrientationDirectionPredict\n'
+        '\n';
     // MyAppState.setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
 
     return Scaffold(
