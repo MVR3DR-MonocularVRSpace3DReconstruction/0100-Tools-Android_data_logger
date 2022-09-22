@@ -67,7 +67,7 @@ class _TrackState extends State<Track> {
                 height: 200.0,
                 width: 100.0,
                 decoration: BoxDecoration(
-                  color: Colors.lightGreen,
+                  color: Colors.black38,
                   borderRadius: const BorderRadius.all( Radius.circular(4.0)),
                   border: Border.all(width: 2, color: Colors.white),
                 ),

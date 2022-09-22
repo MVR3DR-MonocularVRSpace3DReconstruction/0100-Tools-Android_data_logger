@@ -87,6 +87,7 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
       strAbsoluteOrientation = widget.imuData[5]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
 
       strIntegratedOrientation = widget.imuData[6]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAbsoluteOrientationDegree = widget.imuData[5]!.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
       strIntegratedOrientationDirectionPredict = widget.imuData[6]!.map((double v) => ((v * (180/pi))%360).toStringAsFixed(decimalPoints)).toList().join(' ');
 
       strAbsoluteOrientation2 = widget.imuData[7]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
@@ -102,8 +103,8 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
           '$strMagnetometer\n'
 
           '$strOrientation\n'
-          '$strAbsoluteOrientationDegree\n'
-          '$strIntegratedOrientation\n'
+          '$strAbsoluteOrientation\n'
+          '$strAbsoluteOrientation2\n'
           '\n');
       imuSink.close();
     }
@@ -114,9 +115,6 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
         downloadDir.create();
       }
     } );
-
-    // _onSwitchCamera();
-    // MyAppState.setUpdateInterval(1, Duration.microsecondsPerSecond ~/ 60);
     return Scaffold(
       appBar: AppBar(
         title: const Text('CAMERA'),
@@ -134,10 +132,8 @@ class VideoRecorderExampleState extends State<VideoRecorderExample> {
                   'Magnetometer:\t$strMagnetometer\n\n'
 
                   'Orientation:\n$strOrientation\n'
-                  'AbsoluteOrientationDegree:\n$strAbsoluteOrientationDegree\n'
+                  'AbsoluteOrientation:\n$strAbsoluteOrientation\n'
                   'AbsoluteOrientation2:\n$strAbsoluteOrientation2\n'
-                  'IntegratedOrientation:\n$strIntegratedOrientation\n'
-                  'IntegratedOrientationDirectionPredict:\n$strIntegratedOrientationDirectionPredict\n'
                   // 'BaseOrientation:\t${baseOrientation.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ')}'
                       '\n\n'),
             ),

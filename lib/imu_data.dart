@@ -30,11 +30,11 @@ class IMUDataState extends State<IMUData> {
 
   late String strOrientation;
   late String strAbsoluteOrientation;
+  late String strAbsoluteOrientation2;
 
-  late String strAbsoluteOrientationDegreeRebase;
-  late String strAbsoluteOrientationDegree;
 
   late String strIntegratedOrientation;
+
   late String strIntegratedOrientationDirectionPredict;
 
   @override
@@ -57,7 +57,8 @@ class IMUDataState extends State<IMUData> {
 
       strOrientation = widget.imuData[4]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
       strAbsoluteOrientation = widget.imuData[5]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
-      strAbsoluteOrientationDegree = widget.imuData[5]!.map((double v) => (v * (180/pi)).toStringAsFixed(decimalPoints)).toList().join(' ');
+      strAbsoluteOrientation2 = widget.imuData[7]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
+
       strIntegratedOrientation = widget.imuData[6]!.map((double v) => v.toStringAsFixed(decimalPoints)).toList().join(' ');
       strIntegratedOrientationDirectionPredict = widget.imuData[6]!.map((double v) => ((v * (180/pi))%360).toStringAsFixed(decimalPoints)).toList().join(' ');
     });
@@ -67,10 +68,12 @@ class IMUDataState extends State<IMUData> {
         'Accelerometer: \n\t$strAccelerometer\n'
         'UserAccelerometer: \n\t$strUserAccelerometer\n'
         'Gyroscope: \n\t$strGyroscope\n'
-        'Magnetometer: \n\t$strMagnetometer\n'
+        'Magnetometer: \n\t$strMagnetometer\n\n'
+
         'OrientationValues: \n\t$strOrientation\n'
         'AbsoluteOrientation(-π,π): \n\t$strAbsoluteOrientation\n'
-        'AbsoluteOrientation(-180,180): \n\t$strAbsoluteOrientationDegree\n'
+        'AbsoluteOrientation2(-π,π): \n\t$strAbsoluteOrientation2\n\n'
+
         'IntegratedOrientation(π): \n\t$strIntegratedOrientation\n'
         'IntegratedOrientationDirectionPredict(0,360): \n\t$strIntegratedOrientationDirectionPredict\n'
         '\n';

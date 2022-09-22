@@ -152,6 +152,7 @@ class MyAppState extends State<MyApp> {
                 orientationValues,
                 absoluteOrientationValues,
                 integratedOrientationValues,
+                absoluteOrientationValues2,
               ],
             ),
             Track(
@@ -192,7 +193,7 @@ class MyAppState extends State<MyApp> {
   }
 
 
-  static void setUpdateInterval(int interval) {
+  void setUpdateInterval(int interval) {
     motionSensors.accelerometerUpdateInterval = interval;
     motionSensors.userAccelerometerUpdateInterval = interval;
     motionSensors.gyroscopeUpdateInterval = interval;

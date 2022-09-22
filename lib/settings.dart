@@ -17,7 +17,7 @@ class _SettingsState extends State<Settings> {
 
   Directory downloadDir = Directory('/storage/emulated/0/Download/Logger/');
   var _file;
-  int? _groupValue=3;
+  int? _groupValue;
   void _listOfFiles() async {
     // directory = (await getApplicationDocumentsDirectory()).path;
     setState(() {
@@ -26,6 +26,11 @@ class _SettingsState extends State<Settings> {
     });
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _groupValue = 4;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +83,8 @@ class _SettingsState extends State<Settings> {
               Radio(
                 value: 1,
                 groupValue: _groupValue,
-                onChanged: (dynamic value) => (() {
-                  MyAppState.setUpdateInterval(Duration.microsecondsPerSecond ~/ 1);
+                onChanged: ((dynamic value) {
+                  setUpdateInterval(Duration.microsecondsPerSecond ~/ 1);
                   setState(() {
                     _groupValue = value;
                   });
@@ -89,30 +94,69 @@ class _SettingsState extends State<Settings> {
               Radio(
                 value: 2,
                 groupValue: _groupValue,
-                onChanged: (dynamic value) => (() {
-                  MyAppState.setUpdateInterval(Duration.microsecondsPerSecond ~/ 30);
+                onChanged: ((dynamic value) {
+                  setUpdateInterval(Duration.microsecondsPerSecond ~/ 20);
+                  setState(() {
+                    _groupValue = value;
+                  });
+                }),
+              ),
+              const Text("20 FPS"),
+              Radio(
+                value: 3,
+                groupValue: _groupValue,
+                onChanged: ((dynamic value) {
+                  setUpdateInterval(Duration.microsecondsPerSecond ~/ 30);
                   setState(() {
                     _groupValue = value;
                   });
                 }),
               ),
               const Text("30 FPS"),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+
               Radio(
-                value: 3,
+                value: 4,
                 groupValue: _groupValue,
-                onChanged: (dynamic value) => (() {
-                  MyAppState.setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
+                onChanged: ((dynamic value) {
+                  setUpdateInterval(Duration.microsecondsPerSecond ~/ 60);
                   setState(() {
                     _groupValue = value;
                   });
                 }),
               ),
               const Text("60 FPS"),
+              Radio(
+                value: 5,
+                groupValue: _groupValue,
+                onChanged: ((dynamic value) {
+                  setUpdateInterval(Duration.microsecondsPerSecond ~/ 120);
+                  setState(() {
+                    _groupValue = value;
+                  });
+                }),
+              ),
+              const Text("120 FPS (If you can)"),
             ],
           ),
         ],
       ),
     );
+  }
+
+  void setUpdateInterval(int interval) {
+    motionSensors.accelerometerUpdateInterval = interval;
+    motionSensors.userAccelerometerUpdateInterval = interval;
+    motionSensors.gyroscopeUpdateInterval = interval;
+    motionSensors.magnetometerUpdateInterval = interval;
+    motionSensors.orientationUpdateInterval = interval;
+    motionSensors.absoluteOrientationUpdateInterval = interval;
+
+    MyAppState.duration = interval;
   }
 
   void _deleteFile(String path) {
